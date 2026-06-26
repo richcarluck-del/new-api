@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -880,7 +880,7 @@ export function DetailsDialog(props: DetailsDialogProps) {
                   value={
                     <span className='flex items-center gap-1'>
                       {other.admin_info.local_count_tokens ? (
-                        <Monitor className='size-3 text-blue-500' />
+                        <Monitor className='size-3 text-orange-500' />
                       ) : (
                         <Cloud className='size-3 text-emerald-500' />
                       )}

@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { type ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import {
   Collapsible,
@@ -58,16 +59,18 @@ import { ChatPresetsItem } from './chat-presets-item'
  * Sidebar navigation group component
  * Renders a group of navigation items, supporting regular links and collapsible submenus
  */
-export function NavGroup({ title, items }: NavGroupProps) {
+export function NavGroup({ id, title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
 
   return (
-    <SidebarGroup className='px-2 py-1'>
-      <SidebarGroupLabel className='text-muted-foreground/70 px-2 text-[11px] font-medium tracking-wider uppercase'>
-        {title}
-      </SidebarGroupLabel>
-      <SidebarMenu>
+    <SidebarGroup className={cn('px-0 py-1', id === 'personal' && 'pt-4')}>
+      {title && (
+        <SidebarGroupLabel className='text-muted-foreground/70 px-5 text-[11px] font-medium tracking-wider uppercase'>
+          {title}
+        </SidebarGroupLabel>
+      )}
+      <SidebarMenu className='gap-3 px-2'>
         {items.map((item) => {
           const key = `${item.title}-${item.url || item.type}`
 
@@ -127,7 +130,11 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
         tooltip={item.title}
         render={<Link to={item.url} onClick={() => setOpenMobile(false)} />}
       >
-        {item.icon && <item.icon />}
+        {item.icon && (
+          <span className='flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors group-data-[active]/menu-button:bg-primary group-data-[active]/menu-button:text-primary-foreground group-data-[collapsible=icon]:size-5'>
+            <item.icon />
+          </span>
+        )}
         <span>{item.title}</span>
         {item.badge && <NavBadge>{item.badge}</NavBadge>}
       </SidebarMenuButton>

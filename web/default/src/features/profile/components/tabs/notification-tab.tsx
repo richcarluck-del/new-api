@@ -20,13 +20,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { Bell, Loader2, Mail, Server, Webhook } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { ROLE } from '@/lib/roles'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Switch } from '@/components/ui/switch'
-import { PasswordInput } from '@/components/password-input'
 import { updateUserSettings } from '../../api'
 import {
   DEFAULT_QUOTA_WARNING_THRESHOLD,
@@ -53,7 +50,6 @@ interface NotificationTabProps {
 
 export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
   const { t } = useTranslation()
-  const isAdmin = (profile?.role ?? 0) >= ROLE.ADMIN
   const [loading, setLoading] = useState(false)
   const [settings, setSettings] = useState<UserSettings>({
     notify_type: 'email',
@@ -131,7 +127,10 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
           }
           className='grid grid-cols-4 gap-1.5 sm:gap-3'
         >
-          {NOTIFICATION_METHODS.map((method) => {
+          {/* Webhook / Bark / Gotify hidden per request — only Email shown */}
+          {NOTIFICATION_METHODS.filter(
+            (method) => method.value === 'email'
+          ).map((method) => {
             const Icon = NOTIFICATION_ICONS[method.value]
             const isSelected = settings.notify_type === method.value
             return (
@@ -192,8 +191,9 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
         </div>
       )}
 
+      {/* Webhook / Bark / Gotify settings hidden per request — may restore later */}
       {/* Webhook Settings */}
-      {settings.notify_type === 'webhook' && (
+      {/* {settings.notify_type === 'webhook' && (
         <>
           <div className='space-y-1.5'>
             <Label htmlFor='webhookUrl'>{t('Webhook URL')}</Label>
@@ -216,10 +216,10 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
             />
           </div>
         </>
-      )}
+      )} */}
 
       {/* Bark Settings */}
-      {settings.notify_type === 'bark' && (
+      {/* {settings.notify_type === 'bark' && (
         <div className='space-y-1.5'>
           <Label htmlFor='barkUrl'>{t('Bark Push URL')}</Label>
           <Input
@@ -234,10 +234,10 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
             {t('Template variables:')} {'{{title}}'}, {'{{content}}'}
           </p>
         </div>
-      )}
+      )} */}
 
       {/* Gotify Settings */}
-      {settings.notify_type === 'gotify' && (
+      {/* {settings.notify_type === 'gotify' && (
         <>
           <div className='space-y-1.5'>
             <Label htmlFor='gotifyUrl'>{t('Gotify Server URL')}</Label>
@@ -307,13 +307,13 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
             </p>
           </div>
         </>
-      )}
+      )} */}
 
       {/* Divider */}
       <div className='border-t' />
 
-      {/* Preferences Section */}
-      <div className='space-y-3'>
+      {/* Preferences Section hidden per request — may restore later */}
+      {/* <div className='space-y-3'>
         <div>
           <h4 className='text-sm font-medium'>{t('Preferences')}</h4>
           <p className='text-muted-foreground mt-1 text-xs'>
@@ -321,7 +321,6 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
           </p>
         </div>
 
-        {/* Receive Upstream Model Update Notifications (admin only) */}
         {isAdmin && (
           <div className='flex items-start justify-between gap-3 rounded-lg border p-3 sm:items-center sm:p-4'>
             <div className='space-y-0.5'>
@@ -345,7 +344,6 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
           </div>
         )}
 
-        {/* Accept Unset Model Price */}
         <div className='flex items-start justify-between gap-3 rounded-lg border p-3 sm:items-center sm:p-4'>
           <div className='space-y-0.5'>
             <Label htmlFor='acceptUnsetPrice'>
@@ -365,7 +363,6 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
           />
         </div>
 
-        {/* Record IP Log */}
         <div className='flex items-start justify-between gap-3 rounded-lg border p-3 sm:items-center sm:p-4'>
           <div className='space-y-0.5'>
             <Label htmlFor='recordIp'>{t('Record IP Address')}</Label>
@@ -380,7 +377,7 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
             onCheckedChange={(checked) => updateField('record_ip_log', checked)}
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Save Button */}
       <div className='flex justify-end'>

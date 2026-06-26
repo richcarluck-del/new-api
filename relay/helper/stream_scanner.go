@@ -242,6 +242,7 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 			}
 
 			if len(data) < 6 {
+				// skip short lines
 				continue
 			}
 			if data[:5] != "data:" && data[:6] != "[DONE]" {

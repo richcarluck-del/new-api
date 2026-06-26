@@ -17,16 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useCallback, useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { PublicLayout } from '@/components/layout'
+import { useAuthStore } from '@/stores/auth-store'
+import { AdaptiveLayout } from '@/components/layout'
 import { PageTransition } from '@/components/page-transition'
 import {
   LoadingSkeleton,
   EmptyState,
-  SearchBar,
   PricingTable,
   PricingSidebar,
-  PricingToolbar,
   ModelCardGrid,
   ModelDetailsDrawer,
 } from './components'
@@ -35,7 +33,7 @@ import { useFilters } from './hooks/use-filters'
 import { usePricingData } from './hooks/use-pricing-data'
 
 export function Pricing() {
-  const { t } = useTranslation()
+  const isAuthenticated = !!useAuthStore((s) => s.auth.user)
   const [selectedModelName, setSelectedModelName] = useState<string | null>(
     null
   )
@@ -54,28 +52,17 @@ export function Pricing() {
 
   const {
     searchInput,
-    sortBy,
     vendorFilter,
     groupFilter,
-    quotaTypeFilter,
-    endpointTypeFilter,
     tagFilter,
     tokenUnit,
     viewMode,
     showRechargePrice,
-    setSearchInput,
-    setSortBy,
     setVendorFilter,
     setGroupFilter,
-    setQuotaTypeFilter,
-    setEndpointTypeFilter,
     setTagFilter,
-    setTokenUnit,
-    setViewMode,
-    setShowRechargePrice,
     filteredModels,
     hasActiveFilters,
-    activeFilterCount,
     availableTags,
     clearFilters,
     clearSearch,
@@ -144,18 +131,24 @@ export function Pricing() {
     )
   }
 
+  const contentPadding = isAuthenticated
+    ? 'px-3 pt-6 pb-8 sm:px-6 sm:pt-8 sm:pb-10 xl:px-8'
+    : 'px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'
+
   if (isLoading) {
     return (
-      <PublicLayout showMainContainer={false}>
-        <div className='mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
+      <AdaptiveLayout showMainContainer={false}>
+        <div
+          className={`mx-auto w-full max-w-[1800px] ${contentPadding}`}
+        >
           <LoadingSkeleton viewMode={viewMode} />
         </div>
-      </PublicLayout>
+      </AdaptiveLayout>
     )
   }
 
   return (
-    <PublicLayout showMainContainer={false}>
+    <AdaptiveLayout showMainContainer={false}>
       <div className='relative'>
         <div
           aria-hidden
@@ -172,7 +165,10 @@ export function Pricing() {
               'linear-gradient(to bottom, black 40%, transparent 100%)',
           }}
         />
-        <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
+        <PageTransition
+          className={`relative mx-auto w-full max-w-[1800px] ${contentPadding}`}
+        >
+          {/* Models directory header (title/subtitle/search) hidden per request — may restore later
           <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
             <p className='text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase'>
               {t('Models Directory')}
@@ -200,16 +196,14 @@ export function Pricing() {
               className='mx-auto mt-4 max-w-2xl sm:mt-6'
             />
           </header>
+          */}
 
-          <div className='grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)]'>
+          <div className='space-y-4'>
             <PricingSidebar
-              quotaTypeFilter={quotaTypeFilter}
-              endpointTypeFilter={endpointTypeFilter}
+              orientation='horizontal'
               vendorFilter={vendorFilter}
               groupFilter={groupFilter}
               tagFilter={tagFilter}
-              onQuotaTypeChange={setQuotaTypeFilter}
-              onEndpointTypeChange={setEndpointTypeFilter}
               onVendorChange={setVendorFilter}
               onGroupChange={setGroupFilter}
               onTagChange={setTagFilter}
@@ -220,43 +214,9 @@ export function Pricing() {
               models={models || []}
               hasActiveFilters={hasActiveFilters}
               onClearFilters={clearFilters}
-              className='hover-scrollbar sticky top-4 hidden max-h-[calc(100dvh-2rem)] self-start overflow-y-auto xl:block'
             />
 
-            <main className='min-w-0 space-y-4'>
-              <PricingToolbar
-                filteredCount={filteredModels.length}
-                totalCount={models?.length}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                tokenUnit={tokenUnit}
-                onTokenUnitChange={setTokenUnit}
-                showRechargePrice={showRechargePrice}
-                onRechargePriceChange={setShowRechargePrice}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                quotaTypeFilter={quotaTypeFilter}
-                endpointTypeFilter={endpointTypeFilter}
-                vendorFilter={vendorFilter}
-                groupFilter={groupFilter}
-                tagFilter={tagFilter}
-                onQuotaTypeChange={setQuotaTypeFilter}
-                onEndpointTypeChange={setEndpointTypeFilter}
-                onVendorChange={setVendorFilter}
-                onGroupChange={setGroupFilter}
-                onTagChange={setTagFilter}
-                vendors={vendors || []}
-                groups={availableGroups}
-                groupRatios={groupRatio}
-                tags={availableTags}
-                models={models || []}
-                hasActiveFilters={hasActiveFilters}
-                activeFilterCount={activeFilterCount}
-                onClearFilters={clearFilters}
-              />
-
-              {renderPricingContent()}
-            </main>
+            <main className='min-w-0'>{renderPricingContent()}</main>
           </div>
 
           {selectedModel && (
@@ -283,6 +243,6 @@ export function Pricing() {
           )}
         </PageTransition>
       </div>
-    </PublicLayout>
+    </AdaptiveLayout>
   )
 }

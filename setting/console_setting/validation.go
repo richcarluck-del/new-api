@@ -71,6 +71,10 @@ func ValidateConsoleSettings(settingsStr string, settingType string) error {
 		return validateAnnouncements(settingsStr)
 	case "FAQ":
 		return validateFAQ(settingsStr)
+	case "HomePricing":
+		return validateHomePricing(settingsStr)
+	case "CustomerService":
+		return validateCustomerService(settingsStr)
 	case "UptimeKumaGroups":
 		return validateUptimeKumaGroups(settingsStr)
 	default:
@@ -232,6 +236,105 @@ func GetAnnouncements() []map[string]interface{} {
 
 func GetFAQ() []map[string]interface{} {
 	return getJSONList(GetConsoleSetting().FAQ)
+}
+
+func validateHomePricing(pricingStr string) error {
+	list, err := parseJSONArray(pricingStr, "模型定价")
+	if err != nil {
+		return err
+	}
+	if len(list) > 100 {
+		return fmt.Errorf("模型定价数量不能超过100个")
+	}
+	for i, row := range list {
+		model, ok := row["model"].(string)
+		if !ok || model == "" {
+			return fmt.Errorf("第%d个模型定价缺少模型名称字段", i+1)
+		}
+		if len(model) > 100 {
+			return fmt.Errorf("第%d个模型定价的模型名称长度不能超过100字符", i+1)
+		}
+		for _, field := range []string{"official", "ratio", "price", "save"} {
+			if v, exists := row[field]; exists {
+				if s, ok := v.(string); ok {
+					if len(s) > 100 {
+						return fmt.Errorf("第%d个模型定价的字段长度不能超过100字符", i+1)
+					}
+					if err := checkDangerousContent(s, i+1, "模型定价"); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		if err := checkDangerousContent(model, i+1, "模型定价"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func GetHomePricing() []map[string]interface{} {
+	return getJSONList(GetConsoleSetting().HomePricing)
+}
+
+// validateCustomerService 校验客服配置 (JSON 对象)。
+// 结构: {title, description, items:[{label, image}]}。
+// 图片为 base64 data URL,允许较大体积且跳过危险字符检查;文字字段做长度与危险内容检查。
+func validateCustomerService(csStr string) error {
+	var cfg struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		Items       []struct {
+			Label string `json:"label"`
+			Image string `json:"image"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal([]byte(csStr), &cfg); err != nil {
+		return fmt.Errorf("客服配置格式错误：%s", err.Error())
+	}
+	if len(cfg.Title) > 100 {
+		return fmt.Errorf("客服标题长度不能超过100字符")
+	}
+	if len(cfg.Description) > 500 {
+		return fmt.Errorf("客服说明长度不能超过500字符")
+	}
+	if err := checkDangerousContent(cfg.Title, 0, "客服标题"); err != nil {
+		return err
+	}
+	if err := checkDangerousContent(cfg.Description, 0, "客服说明"); err != nil {
+		return err
+	}
+	if len(cfg.Items) > 10 {
+		return fmt.Errorf("客服二维码数量不能超过10个")
+	}
+	for i, item := range cfg.Items {
+		if len(item.Label) > 50 {
+			return fmt.Errorf("第%d个二维码的标签长度不能超过50字符", i+1)
+		}
+		if err := checkDangerousContent(item.Label, i+1, "二维码标签"); err != nil {
+			return err
+		}
+		// 图片 base64 data URL，限制约 2MB；空值允许（占位）
+		if len(item.Image) > 3*1024*1024 {
+			return fmt.Errorf("第%d个二维码图片体积过大", i+1)
+		}
+		if item.Image != "" && !strings.HasPrefix(item.Image, "data:image/") {
+			return fmt.Errorf("第%d个二维码图片格式不正确", i+1)
+		}
+	}
+	return nil
+}
+
+func GetCustomerService() map[string]interface{} {
+	csStr := GetConsoleSetting().CustomerService
+	if csStr == "" {
+		return map[string]interface{}{}
+	}
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(csStr), &obj); err != nil {
+		return map[string]interface{}{}
+	}
+	return obj
 }
 
 func validateUptimeKumaGroups(groupsStr string) error {

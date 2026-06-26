@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import {
   LayoutDashboard,
-  Activity,
+  Gauge,
   Key,
   FileText,
   Wallet,
@@ -28,10 +28,9 @@ import {
   User,
   Command,
   Radio,
-  FlaskConical,
-  MessageSquare,
   CreditCard,
   ListTodo,
+  Store,
   Settings,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -51,6 +50,8 @@ export function useSidebarData(): SidebarData {
       },
     ],
     navGroups: [
+      // Chat group hidden for now — keep for potential future use.
+      /*
       {
         id: 'chat',
         title: t('Chat'),
@@ -67,14 +68,15 @@ export function useSidebarData(): SidebarData {
           },
         ],
       },
+      */
       {
         id: 'general',
-        title: t('General'),
+        title: '',
         items: [
           {
-            title: t('Overview'),
+            title: t('Console'),
             url: '/dashboard/overview',
-            icon: Activity,
+            icon: Gauge,
           },
           {
             title: t('Dashboard'),
@@ -98,11 +100,16 @@ export function useSidebarData(): SidebarData {
             configUrls: ['/usage-logs/drawing', '/usage-logs/task'],
             icon: ListTodo,
           },
+          {
+            title: t('Model Square'),
+            url: '/pricing',
+            icon: Store,
+          },
         ],
       },
       {
         id: 'personal',
-        title: t('Personal'),
+        title: '',
         items: [
           {
             title: t('Wallet'),

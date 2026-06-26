@@ -331,6 +331,24 @@ func UpdateOption(c *gin.Context) {
 			})
 			return
 		}
+	case "console_setting.home_pricing":
+		err = console_setting.ValidateConsoleSettings(option.Value.(string), "HomePricing")
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+			return
+		}
+	case "console_setting.customer_service":
+		err = console_setting.ValidateConsoleSettings(option.Value.(string), "CustomerService")
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+			return
+		}
 	case "console_setting.uptime_kuma_groups":
 		err = console_setting.ValidateConsoleSettings(option.Value.(string), "UptimeKumaGroups")
 		if err != nil {

@@ -19,13 +19,14 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
-import { useStatus } from '@/hooks/use-status'
-import { useSystemConfig } from '@/hooks/use-system-config'
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
+
+const BRAND_LOGO = '/sf-logo.png'
+const BRAND_WORDMARK = '/sf-wordmark.png'
 
 type SystemBrandProps = {
   defaultName?: string
@@ -46,13 +47,8 @@ type SystemBrandProps = {
  */
 export function SystemBrand(props: SystemBrandProps) {
   const { t } = useTranslation()
-  const { status } = useStatus()
-  const { logo } = useSystemConfig()
 
   const variant = props.variant ?? 'sidebar'
-  const name = status?.system_name || props.defaultName || 'New API'
-  const version =
-    status?.version || props.defaultVersion || t('Unknown version')
 
   if (variant === 'inline') {
     return (
@@ -60,18 +56,20 @@ export function SystemBrand(props: SystemBrandProps) {
         to='/'
         aria-label={t('Go to home')}
         className={cn(
-          'text-foreground inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-sm font-medium transition-colors outline-none select-none',
+          'inline-flex items-center gap-2 rounded-lg px-1 py-0.5 transition-colors outline-none select-none',
           'hover:bg-accent focus-visible:ring-ring/40 focus-visible:ring-2'
         )}
       >
-        <div className='flex size-5 items-center justify-center overflow-hidden rounded-md'>
-          <img
-            src={logo}
-            alt={t('Logo')}
-            className='size-full rounded-md object-cover'
-          />
-        </div>
-        <span className='max-w-[12rem] truncate'>{name}</span>
+        <img
+          src={BRAND_LOGO}
+          alt={t('Logo')}
+          className='size-9 object-contain'
+        />
+        <img
+          src={BRAND_WORDMARK}
+          alt='shunfeng'
+          className='mt-1.5 h-5 w-auto object-contain'
+        />
       </Link>
     )
   }
@@ -81,19 +79,20 @@ export function SystemBrand(props: SystemBrandProps) {
       <SidebarMenuItem>
         <SidebarMenuButton
           size='lg'
-          className='hover:text-sidebar-foreground active:text-sidebar-foreground cursor-default hover:bg-transparent active:bg-transparent'
+          className='hover:text-sidebar-foreground active:text-sidebar-foreground h-auto cursor-default py-2 hover:bg-transparent active:bg-transparent'
           render={<div />}
         >
-          <div className='flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
+          <img
+            src={BRAND_LOGO}
+            alt={t('Logo')}
+            className='size-11 shrink-0 object-contain'
+          />
+          <div className='flex flex-1 flex-col items-start gap-1.5 group-data-[collapsible=icon]:hidden'>
             <img
-              src={logo}
-              alt={t('Logo')}
-              className='size-full rounded-lg object-cover'
+              src={BRAND_WORDMARK}
+              alt='shunfeng'
+              className='h-6 w-auto max-w-full object-contain'
             />
-          </div>
-          <div className='grid flex-1 text-start text-sm leading-tight group-data-[collapsible=icon]:hidden'>
-            <span className='truncate font-semibold'>{name}</span>
-            <span className='truncate text-xs'>{version}</span>
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>

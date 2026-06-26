@@ -94,10 +94,12 @@ func GetStatus(c *gin.Context) {
 		"stripe_unit_price": setting.StripeUnitPrice,
 
 		// 面板启用开关
-		"api_info_enabled":      cs.ApiInfoEnabled,
-		"uptime_kuma_enabled":   cs.UptimeKumaEnabled,
-		"announcements_enabled": cs.AnnouncementsEnabled,
-		"faq_enabled":           cs.FAQEnabled,
+		"api_info_enabled":         cs.ApiInfoEnabled,
+		"uptime_kuma_enabled":      cs.UptimeKumaEnabled,
+		"announcements_enabled":    cs.AnnouncementsEnabled,
+		"faq_enabled":              cs.FAQEnabled,
+		"home_pricing_enabled":     cs.HomePricingEnabled,
+		"customer_service_enabled": cs.CustomerServiceEnabled,
 
 		// 模块管理配置
 		"HeaderNavModules":    common.OptionMap["HeaderNavModules"],
@@ -128,6 +130,12 @@ func GetStatus(c *gin.Context) {
 	}
 	if cs.FAQEnabled {
 		data["faq"] = console_setting.GetFAQ()
+	}
+	if cs.HomePricingEnabled {
+		data["home_pricing"] = console_setting.GetHomePricing()
+	}
+	if cs.CustomerServiceEnabled {
+		data["customer_service"] = console_setting.GetCustomerService()
 	}
 
 	// Add enabled custom OAuth providers
@@ -281,7 +289,7 @@ func SendEmailVerification(c *gin.Context) {
 		})
 		return
 	}
-	code := common.GenerateVerificationCode(6)
+	code := common.GenerateNumericVerificationCode(6)
 	common.RegisterVerificationCodeWithKey(email, code, common.EmailVerificationPurpose)
 	subject := fmt.Sprintf("%s邮箱验证邮件", common.SystemName)
 	content := fmt.Sprintf("<p>您好，你正在进行%s邮箱验证。</p>"+

@@ -80,6 +80,18 @@ func ResponsesHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 	} else {
 		convertedRequest, err := adaptor.ConvertOpenAIResponsesRequest(c, info, *request)
 		if err != nil {
+			if strings.Contains(strings.ToLower(err.Error()), "not implemented") {
+				usage, newApiErr := responsesViaChatCompletions(c, info, adaptor, request)
+				if newApiErr != nil {
+					return newApiErr
+				}
+				if strings.HasPrefix(info.OriginModelName, "gpt-4o-audio") {
+					service.PostAudioConsumeQuota(c, info, usage, "")
+				} else {
+					service.PostTextConsumeQuota(c, info, usage, nil)
+				}
+				return nil
+			}
 			return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
 		}
 		relaycommon.AppendRequestConversionFromRequest(info, convertedRequest)

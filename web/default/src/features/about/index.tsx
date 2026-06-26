@@ -21,7 +21,7 @@ import { Construction } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Markdown } from '@/components/ui/markdown'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PublicLayout } from '@/components/layout'
+import { AdaptiveLayout } from '@/components/layout'
 import { getAboutContent } from './api'
 
 function isValidUrl(value: string) {
@@ -136,39 +136,39 @@ export function About() {
 
   if (isLoading) {
     return (
-      <PublicLayout>
+      <AdaptiveLayout>
         <div className='mx-auto flex max-w-4xl flex-col gap-4 py-12'>
           <Skeleton className='h-8 w-[45%]' />
           <Skeleton className='h-4 w-full' />
           <Skeleton className='h-4 w-[90%]' />
           <Skeleton className='h-4 w-[80%]' />
         </div>
-      </PublicLayout>
+      </AdaptiveLayout>
     )
   }
 
   if (!hasContent) {
     return (
-      <PublicLayout>
+      <AdaptiveLayout>
         <EmptyAboutState />
-      </PublicLayout>
+      </AdaptiveLayout>
     )
   }
 
   if (isUrl) {
     return (
-      <PublicLayout showMainContainer={false}>
+      <AdaptiveLayout showMainContainer={false}>
         <iframe
           src={rawContent}
           className='h-[calc(100vh-3.5rem)] w-full border-0'
           title={t('About')}
         />
-      </PublicLayout>
+      </AdaptiveLayout>
     )
   }
 
   return (
-    <PublicLayout>
+    <AdaptiveLayout>
       <div className='mx-auto max-w-6xl px-4 py-8'>
         {isHtml ? (
           <div
@@ -181,6 +181,6 @@ export function About() {
           </Markdown>
         )}
       </div>
-    </PublicLayout>
+    </AdaptiveLayout>
   )
 }

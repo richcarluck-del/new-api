@@ -1,6 +1,8 @@
 package common
 
 import (
+	"crypto/rand"
+	"math/big"
 	"strings"
 	"sync"
 	"time"
@@ -30,6 +32,23 @@ func GenerateVerificationCode(length int) string {
 		return code
 	}
 	return code[:length]
+}
+
+// GenerateNumericVerificationCode 生成纯数字验证码(加密安全随机)。
+func GenerateNumericVerificationCode(length int) string {
+	if length <= 0 {
+		length = 6
+	}
+	var sb strings.Builder
+	for i := 0; i < length; i++ {
+		n, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			// 极少发生;退回基于 UUID 的实现保证可用
+			return GenerateVerificationCode(length)
+		}
+		sb.WriteByte(byte('0' + n.Int64()))
+	}
+	return sb.String()
 }
 
 func RegisterVerificationCodeWithKey(key string, code string, purpose string) {

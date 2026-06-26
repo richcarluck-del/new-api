@@ -78,10 +78,14 @@ func (token *Token) GetIpLimits() []string {
 	return ipLimits
 }
 
-func GetAllUserTokens(userId int, startIdx int, num int) ([]*Token, error) {
+func GetAllUserTokens(userId int, startIdx int, num int, group string) ([]*Token, error) {
 	var tokens []*Token
 	var err error
-	err = DB.Where("user_id = ?", userId).Order("id desc").Limit(num).Offset(startIdx).Find(&tokens).Error
+	query := DB.Where("user_id = ?", userId)
+	if group != "" {
+		query = query.Where(commonGroupCol+" = ?", group)
+	}
+	err = query.Order("id desc").Limit(num).Offset(startIdx).Find(&tokens).Error
 	return tokens, err
 }
 
@@ -434,8 +438,18 @@ func decreaseTokenQuota(id int, quota int) (err error) {
 
 // CountUserTokens returns total number of tokens for the given user, used for pagination
 func CountUserTokens(userId int) (int64, error) {
+	return CountUserTokensWithGroup(userId, "")
+}
+
+// CountUserTokensWithGroup returns total number of tokens for the given user,
+// optionally filtered by group. Used for pagination of the keys list.
+func CountUserTokensWithGroup(userId int, group string) (int64, error) {
 	var total int64
-	err := DB.Model(&Token{}).Where("user_id = ?", userId).Count(&total).Error
+	query := DB.Model(&Token{}).Where("user_id = ?", userId)
+	if group != "" {
+		query = query.Where(commonGroupCol+" = ?", group)
+	}
+	err := query.Count(&total).Error
 	return total, err
 }
 

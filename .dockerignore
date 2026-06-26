@@ -13,3 +13,25 @@ docs
 /web/classic/node_modules
 /web/classic/dist
 !THIRD-PARTY-LICENSES.md
+
+# build/dev artifacts and local scratch files (kept out of build context)
+*.tar
+*.tar.gz
+*.exe
+*.exe~
+*.log
+*.bak
+_cf_*.py
+_cf_*.txt
+%SRC%
+pic/
+scripts/
+.codex-skills/
+.agents/
+dev-start.bat
+dev-start.ps1
+dev.ps1
+fix_theme.js
+fix_theme.py
+cmd_theme.go.bak
+tmp_theme.go.bak

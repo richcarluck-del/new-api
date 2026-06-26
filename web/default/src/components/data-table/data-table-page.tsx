@@ -172,6 +172,12 @@ export type DataTablePageProps<TData> = {
   paginationInFooter?: boolean
 
   /**
+   * Extra content rendered between the toolbar and the table/mobile list.
+   * E.g. an info banner or endpoint bar that sits above the results.
+   */
+  afterToolbar?: React.ReactNode
+
+  /**
    * Extra content rendered between the table/mobile list and the pagination.
    * E.g. summary stats, helper text.
    */
@@ -227,6 +233,7 @@ export function DataTablePage<TData>(props: DataTablePageProps<TData>) {
     <>
       <div className={cn('space-y-2.5 sm:space-y-3', props.className)}>
         {toolbarNode}
+        {props.afterToolbar}
         {mobileNode}
         {desktopNode}
         {props.afterTable}

@@ -24,15 +24,15 @@ import { CCSwitchDialog } from './dialogs/cc-switch-dialog'
 
 export function ApiKeysDialogs() {
   const { open, setOpen, currentRow, resolvedKey } = useApiKeys()
-  const [lastMutateSide, setLastMutateSide] = useState<'left' | 'right'>(
+  const [lastMutateSide, setLastMutateSide] = useState<'left' | 'right' | 'center'>(
     'right'
   )
   const mutateSide =
-    open === 'create' ? 'left' : open === 'update' ? 'right' : lastMutateSide
+    open === 'create' ? 'center' : open === 'update' ? 'right' : lastMutateSide
 
   useEffect(() => {
     if (open === 'create') {
-      setLastMutateSide('left')
+      setLastMutateSide('center')
     } else if (open === 'update') {
       setLastMutateSide('right')
     }

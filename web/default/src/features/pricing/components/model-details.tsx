@@ -43,7 +43,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CopyButton } from '@/components/copy-button'
 import { GroupBadge } from '@/components/group-badge'
-import { PublicLayout } from '@/components/layout'
+import { AdaptiveLayout } from '@/components/layout'
 import { getPerfMetrics } from '@/features/performance-metrics/api'
 import {
   formatLatency,
@@ -1051,7 +1051,7 @@ export function ModelDetails() {
 
   if (isLoading) {
     return (
-      <PublicLayout>
+      <AdaptiveLayout>
         <div className='mx-auto max-w-5xl px-4 sm:px-6'>
           <Skeleton className='mb-4 h-5 w-16' />
           <div className='space-y-2'>
@@ -1070,13 +1070,13 @@ export function ModelDetails() {
             ))}
           </div>
         </div>
-      </PublicLayout>
+      </AdaptiveLayout>
     )
   }
 
   if (!model) {
     return (
-      <PublicLayout>
+      <AdaptiveLayout>
         <div className='mx-auto max-w-2xl px-4 text-center sm:px-6'>
           <h2 className='mb-1 text-base font-semibold'>
             {t('Model not found')}
@@ -1088,12 +1088,12 @@ export function ModelDetails() {
             {t('Back to Models')}
           </Button>
         </div>
-      </PublicLayout>
+      </AdaptiveLayout>
     )
   }
 
   return (
-    <PublicLayout>
+    <AdaptiveLayout>
       <div className='mx-auto max-w-5xl px-4 sm:px-6'>
         <Button
           variant='ghost'
@@ -1122,6 +1122,6 @@ export function ModelDetails() {
           }
         />
       </div>
-    </PublicLayout>
+    </AdaptiveLayout>
   )
 }

@@ -30,10 +30,14 @@ const defaultContentSettings: ContentSettings = {
   'console_setting.api_info': '[]',
   'console_setting.announcements': '[]',
   'console_setting.faq': '[]',
+  'console_setting.home_pricing': '[]',
+  'console_setting.customer_service': '{}',
   'console_setting.uptime_kuma_groups': '[]',
   'console_setting.api_info_enabled': true,
   'console_setting.announcements_enabled': true,
   'console_setting.faq_enabled': true,
+  'console_setting.home_pricing_enabled': true,
+  'console_setting.customer_service_enabled': false,
   'console_setting.uptime_kuma_enabled': false,
   DataExportEnabled: false,
   DataExportDefaultTime: 'hour',
@@ -115,6 +119,8 @@ export function ContentSettings() {
     | 'announcements'
     | 'api-info'
     | 'faq'
+    | 'home-pricing'
+    | 'customer-service'
     | 'uptime-kuma'
     | 'chat'
     | 'drawing'

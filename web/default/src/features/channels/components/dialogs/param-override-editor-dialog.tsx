@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -564,7 +564,7 @@ const getModeTagTailwind = (mode: string): string => {
   if (mode.includes('replace') || mode.includes('trim'))
     return 'bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/20'
   if (mode.includes('copy') || mode.includes('move'))
-    return 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/20'
+    return 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/20'
   if (mode.includes('error') || mode.includes('prune'))
     return 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/20'
   if (mode.includes('sync'))

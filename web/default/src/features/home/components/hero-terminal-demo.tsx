@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -56,10 +56,10 @@ const ACCENT_CLASSES: Record<
       'bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400',
   },
   blue: {
-    activeText: 'text-blue-600 dark:text-blue-400',
-    activeBorder: 'border-blue-500 dark:border-blue-400',
+    activeText: 'text-orange-600 dark:text-orange-400',
+    activeBorder: 'border-orange-500 dark:border-orange-400',
     badge:
-      'bg-blue-500/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400',
+      'bg-orange-500/10 text-orange-600 dark:bg-orange-400/10 dark:text-orange-400',
   },
   violet: {
     activeText: 'text-violet-600 dark:text-violet-400',
@@ -507,7 +507,7 @@ function Command(props: { children: ReactNode }) {
 
 function Flag(props: { children: ReactNode }) {
   return (
-    <span className='text-blue-600 dark:text-blue-400'>{props.children}</span>
+    <span className='text-orange-600 dark:text-orange-400'>{props.children}</span>
   )
 }
 

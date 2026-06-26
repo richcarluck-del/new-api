@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -19,10 +19,27 @@ For commercial licensing, please contact support@quantumnous.com
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@import '@fontsource-variable/public-sans';
+@import '@fontsource-variable/inter';
 
 @import './theme.css';
 @import './theme-presets.css';
+
+/* 站酷庆科黄油体 — 圆润现代品牌字（本地子集，仅含首屏用字，约 16KB，零外网依赖） */
+@font-face {
+  font-family: 'ShunfengBrand';
+  src: url('../assets/fonts/sf-brand.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'AlibabaPuHuiTi';
+  src: url('https://cdn.jsdelivr.net/npm/alibaba-puhuiti-3@1.0.0/AlibabaPuHuiTi-3-55-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* Shiki dual themes: token colors follow dark theme (pre background stays `bg-background` on the block) */
 @layer components {
@@ -42,9 +59,10 @@ For commercial licensing, please contact support@quantumnous.com
   }
   html {
     @apply overflow-x-hidden font-sans;
+    scrollbar-gutter: stable;
   }
   body {
-    @apply bg-background text-foreground has-[div[data-variant='inset']]:bg-sidebar min-h-svh w-full font-sans;
+    @apply bg-background text-foreground min-h-svh w-full font-sans antialiased;
   }
 
   /* Keep sticky headers stable while primitives lock body scrolling. */
@@ -361,6 +379,25 @@ For commercial licensing, please contact support@quantumnous.com
   .scroll-container:hover .animate-scroll-down {
     animation-play-state: paused;
   }
+
+  /* Horizontal scroll animation (marquee) for icon rows */
+  @keyframes scroll-left {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-scroll-left {
+    animation: scroll-left 30s linear infinite;
+    will-change: transform;
+  }
+
+  .marquee-container:hover .animate-scroll-left {
+    animation-play-state: paused;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -368,6 +405,7 @@ For commercial licensing, please contact support@quantumnous.com
   .animate-appear-zoom,
   .animate-scroll-up,
   .animate-scroll-down,
+  .animate-scroll-left,
   [data-slot='table'] tbody tr {
     animation: none !important;
     opacity: 1;

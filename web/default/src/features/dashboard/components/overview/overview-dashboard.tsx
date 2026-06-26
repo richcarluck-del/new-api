@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -32,27 +32,20 @@ import {
   ListChecks,
   Play,
   RadioTower,
-  ShieldCheck,
   TerminalSquare,
-  Timer,
   type LucideIcon,
 } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/auth-store'
-import { getUserModels } from '@/lib/api'
-import { MOTION_TRANSITION } from '@/lib/motion'
 import { ROLE } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { CopyButton } from '@/components/copy-button'
 import {
   CardStaggerContainer,
   CardStaggerItem,
 } from '@/components/page-transition'
-import { fetchTokenKey, getApiKeys } from '@/features/keys/api'
+import { getApiKeys } from '@/features/keys/api'
 import type { ApiKey } from '@/features/keys/types'
-import { useApiInfo } from '../../hooks/use-status-data'
 import { AnnouncementsPanel } from './announcements-panel'
 import { ApiInfoPanel } from './api-info-panel'
 import { FAQPanel } from './faq-panel'
@@ -63,7 +56,8 @@ import { UptimePanel } from './uptime-panel'
 const SETUP_GUIDE_VISIBILITY_STORAGE_KEY =
   'dashboard_overview_setup_guide_expanded'
 
-const SETUP_GUIDE_CODE_PATTERN = [
+// Backdrop code pattern hidden per request — kept for potential restore.
+/* const SETUP_GUIDE_CODE_PATTERN = [
   'const request = await client.responses.create({',
   "  model: 'gpt-4.1-mini',",
   "  input: 'Start routing traffic',",
@@ -72,7 +66,7 @@ const SETUP_GUIDE_CODE_PATTERN = [
   'if (request.output_text) {',
   '  console.log(request.output_text)',
   '}',
-].join('\n')
+].join('\n') */
 
 type DashboardActionPath =
   | '/keys'
@@ -98,7 +92,8 @@ interface QuickAction {
   adminOnly?: boolean
 }
 
-interface RequestExample {
+// Types for the hidden "First API request" preview — kept for potential restore.
+/* interface RequestExample {
   endpoint: string
   model: string
   keyName: string
@@ -111,7 +106,7 @@ interface HeroSignal {
   label: string
   value: string
   icon: LucideIcon
-}
+} */
 
 function getSavedSetupGuideExpanded(): boolean | null {
   if (typeof window === 'undefined') return null
@@ -129,7 +124,8 @@ function saveSetupGuideExpanded(expanded: boolean): void {
   )
 }
 
-function getCurrentOrigin(): string {
+// Endpoint/curl helpers for the hidden "First API request" preview — kept for potential restore.
+/* function getCurrentOrigin(): string {
   if (typeof window === 'undefined') return ''
   return window.location.origin
 }
@@ -147,13 +143,13 @@ function normalizeEndpoint(sourceUrl?: string): string {
     return `${withoutTrailingSlash}/chat/completions`
   }
   return `${withoutTrailingSlash}/v1/chat/completions`
-}
+} */
 
 function getPreferredKey(keys: ApiKey[]): ApiKey | null {
   return keys.find((item) => item.status === 1) ?? keys[0] ?? null
 }
 
-function formatDisplayKey(key?: string): string {
+/* function formatDisplayKey(key?: string): string {
   if (!key) return 'sk-...'
   if (key.length <= 14) return key
   return `${key.slice(0, 7)}...${key.slice(-4)}`
@@ -170,38 +166,20 @@ function buildCurlCommand(args: {
     `  -H "Authorization: Bearer ${args.apiKey}" \\`,
     `  -d '{"model":"${args.model}","messages":[{"role":"user","content":"Say hello in one sentence."}]}'`,
   ].join('\n')
-}
+} */
 
 function SetupGuideBackdrop(props: { compact?: boolean }) {
   return (
     <>
       <div
         className={cn(
-          'pointer-events-none absolute inset-0 bg-[linear-gradient(112deg,oklch(0.97_0.04_250/.92)_0%,oklch(0.95_0.08_315/.82)_38%,oklch(0.96_0.12_92/.78)_74%,oklch(0.94_0.1_132/.62)_100%)] dark:opacity-25',
+          'pointer-events-none absolute inset-0 bg-muted/20',
           props.compact
             ? '[mask-image:linear-gradient(90deg,black_0%,black_48%,transparent_74%)] opacity-55'
             : 'opacity-85'
         )}
         aria-hidden='true'
       />
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-y-0 right-0 hidden overflow-hidden font-mono text-lime-100/75 sm:block dark:text-lime-200/25',
-          props.compact ? 'w-1/2 opacity-45' : 'w-[58%] opacity-75'
-        )}
-        aria-hidden='true'
-      >
-        <pre
-          className={cn(
-            'absolute right-3 [mask-image:linear-gradient(90deg,transparent_0%,black_30%,black_82%,transparent_100%)] text-right tracking-[0.38em] whitespace-pre',
-            props.compact
-              ? '-top-6 text-[9px] leading-4'
-              : 'top-1 text-[11px] leading-5'
-          )}
-        >
-          {SETUP_GUIDE_CODE_PATTERN}
-        </pre>
-      </div>
       <div
         className='from-background/35 to-background/70 dark:from-background/20 dark:to-background/80 pointer-events-none absolute inset-0 bg-linear-to-b via-transparent'
         aria-hidden='true'
@@ -212,14 +190,13 @@ function SetupGuideBackdrop(props: { compact?: boolean }) {
 
 function StartStepItem(props: {
   step: StartStep
-  index: number
   isLast: boolean
 }) {
   const Icon = props.step.icon
   const StatusIcon = props.step.completed ? Check : Circle
 
   return (
-    <li className='relative flex gap-3 pb-2.5 last:pb-0'>
+    <li className='relative flex items-center gap-3 pb-2.5 last:pb-0'>
       {!props.isLast && (
         <span
           className='bg-border absolute top-9 bottom-0 left-4 w-px'
@@ -228,7 +205,7 @@ function StartStepItem(props: {
       )}
       <span
         className={cn(
-          'bg-background relative z-10 flex size-8 shrink-0 items-center justify-center rounded-lg border shadow-xs',
+          'bg-background relative z-10 flex size-8 shrink-0 items-center justify-center rounded-lg border',
           props.step.completed && 'border-success/30 bg-success/10'
         )}
       >
@@ -240,22 +217,21 @@ function StartStepItem(props: {
 
       <Link
         to={props.step.to}
-        className='bg-background/70 hover:bg-muted/50 focus-visible:ring-ring flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left shadow-xs transition-colors outline-none focus-visible:ring-2'
+        className='hover:bg-muted/50 focus-visible:ring-ring flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2'
       >
-        <span className='flex min-w-0 items-start gap-2.5'>
-          <span className='bg-muted mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg'>
+        <span className='flex min-w-0 items-center gap-2.5'>
+          <span className='bg-primary/10 text-primary flex size-7 shrink-0 items-center justify-center rounded-lg'>
             <Icon className='size-3.5' aria-hidden='true' />
           </span>
           <span className='flex min-w-0 flex-col gap-0.5'>
             <span className='flex items-center gap-2 text-sm font-medium'>
-              <span className='text-muted-foreground font-mono text-xs tabular-nums'>
-                {props.index + 1}.
-              </span>
               <span className='truncate'>{props.step.title}</span>
             </span>
-            <span className='text-muted-foreground line-clamp-1 text-xs'>
-              {props.step.description}
-            </span>
+            {props.step.description && (
+              <span className='text-muted-foreground line-clamp-1 text-xs'>
+                {props.step.description}
+              </span>
+            )}
           </span>
         </span>
         <ArrowRight
@@ -267,7 +243,8 @@ function StartStepItem(props: {
   )
 }
 
-function RequestPreview(props: {
+// Used by the hidden "First API request" preview — kept for potential restore.
+/* function RequestPreview(props: {
   example: RequestExample
   signals: HeroSignal[]
 }) {
@@ -285,7 +262,7 @@ function RequestPreview(props: {
       initial={shouldReduceMotion ? false : { opacity: 0, y: 10, scale: 0.98 }}
       animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       transition={MOTION_TRANSITION.slow}
-      className='bg-background/75 relative overflow-hidden rounded-2xl border p-3 shadow-sm backdrop-blur'
+      className='bg-muted/40 relative overflow-hidden rounded-xl p-3 backdrop-blur'
     >
       {!shouldReduceMotion && (
         <motion.div
@@ -298,7 +275,7 @@ function RequestPreview(props: {
 
       <div className='flex items-center justify-between gap-3 border-b pb-3'>
         <div className='flex min-w-0 items-center gap-2'>
-          <span className='bg-muted flex size-8 shrink-0 items-center justify-center rounded-lg'>
+          <span className='bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-lg'>
             <TerminalSquare className='size-4' aria-hidden='true' />
           </span>
           <div className='min-w-0'>
@@ -377,9 +354,10 @@ function RequestPreview(props: {
       </div>
     </motion.div>
   )
-}
+} */
 
-function QuickActionItem(props: { action: QuickAction }) {
+// Used by the hidden "Recommended actions" panel — kept for potential restore.
+/* function QuickActionItem(props: { action: QuickAction }) {
   const Icon = props.action.icon
 
   return (
@@ -388,7 +366,7 @@ function QuickActionItem(props: { action: QuickAction }) {
       className='h-auto justify-start rounded-xl px-3 py-3 text-left'
       render={<Link to={props.action.to} />}
     >
-      <span className='bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg'>
+      <span className='bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg'>
         <Icon className='size-4' aria-hidden='true' />
       </span>
       <span className='flex min-w-0 flex-1 flex-col gap-0.5'>
@@ -401,7 +379,7 @@ function QuickActionItem(props: { action: QuickAction }) {
       </span>
     </Button>
   )
-}
+} */
 
 function CompactQuickAction(props: { action: QuickAction }) {
   const Icon = props.action.icon
@@ -422,7 +400,6 @@ function CompactQuickAction(props: { action: QuickAction }) {
 export function OverviewDashboard() {
   const { t } = useTranslation()
   const user = useAuthStore((state) => state.auth.user)
-  const { items: apiInfoItems } = useApiInfo()
   const [manualSetupGuideExpanded, setManualSetupGuideExpanded] = useState<
     boolean | null
   >(() => getSavedSetupGuideExpanded())
@@ -441,50 +418,30 @@ export function OverviewDashboard() {
     staleTime: 60 * 1000,
   })
 
-  const modelsQuery = useQuery({
-    queryKey: ['dashboard', 'overview', 'user-models'],
-    queryFn: async () => {
-      const result = await getUserModels()
-      return result.success ? (result.data ?? []) : []
-    },
-    staleTime: 5 * 60 * 1000,
-  })
-
   const preferredKey = useMemo(
     () => getPreferredKey(apiKeysQuery.data ?? []),
     [apiKeysQuery.data]
   )
 
-  const realKeyQuery = useQuery({
-    queryKey: ['dashboard', 'overview', 'token-key', preferredKey?.id],
-    queryFn: async () => {
-      if (!preferredKey?.id) return ''
-      const result = await fetchTokenKey(preferredKey.id)
-      return result.success && result.data?.key ? `sk-${result.data.key}` : ''
-    },
-    enabled: Boolean(preferredKey?.id),
-    staleTime: 5 * 60 * 1000,
-  })
-
   const startSteps = useMemo<StartStep[]>(
     () => [
       {
-        title: t('Create API Key'),
-        description: t('Create a key for your app or service'),
+        title: t('Step 1: Create an API key'),
+        description: '',
         to: '/keys',
         icon: KeyRound,
         completed: Boolean(preferredKey),
       },
       {
-        title: t('Add credits'),
-        description: t('Keep enough balance before production traffic'),
+        title: t('Step 2: Add credits'),
+        description: '',
         to: '/wallet',
         icon: CreditCard,
         completed: remainQuota > 0 || usedQuota > 0,
       },
       {
-        title: t('Send a request'),
-        description: t('Verify routing with Playground or your client'),
+        title: t('Step 3: Send a request and use the model'),
+        description: '',
         to: '/playground',
         icon: TerminalSquare,
         completed: requestCount > 0,
@@ -529,7 +486,8 @@ export function OverviewDashboard() {
     [isAdmin, quickActions]
   )
 
-  const heroSignals = useMemo<HeroSignal[]>(
+  // Hero signals + request example feed the hidden "First API request" preview — kept for potential restore.
+  /* const heroSignals = useMemo<HeroSignal[]>(
     () => [
       {
         label: t('Route active'),
@@ -569,7 +527,7 @@ export function OverviewDashboard() {
         model,
       }),
     }
-  }, [apiInfoItems, modelsQuery.data, preferredKey, realKeyQuery.data, t])
+  }, [apiInfoItems, modelsQuery.data, preferredKey, realKeyQuery.data, t]) */
 
   const completedStepCount = startSteps.filter((step) => step.completed).length
   const setupComplete = completedStepCount === startSteps.length
@@ -584,26 +542,38 @@ export function OverviewDashboard() {
   return (
     <div className='flex flex-col gap-4'>
       {setupGuideExpanded ? (
-        <CardStaggerContainer className='grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]'>
-          <CardStaggerItem className='bg-card h-full overflow-hidden rounded-2xl border shadow-xs'>
-            <div className='relative h-full overflow-hidden p-4 sm:p-5'>
+        <CardStaggerContainer className='grid items-stretch gap-4'>
+          <CardStaggerItem className='bg-card h-full w-2/3 overflow-hidden rounded-2xl border border-border/60'>
+            <div className='relative h-full overflow-hidden p-5 sm:p-6'>
               <SetupGuideBackdrop />
-              <div className='relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]'>
+              <div className='relative grid grid-cols-1 gap-5'>
                 <div className='flex min-w-0 flex-col gap-5'>
                   <div className='flex flex-wrap items-start justify-between gap-3'>
                     <div className='flex max-w-2xl flex-col gap-1'>
-                      <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium tracking-wider uppercase'>
-                        <ListChecks className='size-3.5' aria-hidden='true' />
-                        {t('Get started')}
+                      <div className='flex items-center gap-2'>
+                        <h3 className='flex items-center gap-2 text-lg font-semibold tracking-tight sm:text-xl'>
+                          <ListChecks
+                            className='text-primary size-5'
+                            aria-hidden='true'
+                          />
+                          {t('Beginner guide')}
+                        </h3>
+                        <span className='text-muted-foreground bg-background/60 rounded-md border px-2 py-0.5 text-xs'>
+                          {t('Setup progress: {{completed}}/{{total}}', {
+                            completed: completedStepCount,
+                            total: startSteps.length,
+                          })}
+                        </span>
                       </div>
-                      <h3 className='text-xl font-semibold tracking-tight sm:text-2xl'>
+                      {/* Subtitle and description hidden per request — may restore later */}
+                      {/* <h3 className='text-xl font-semibold tracking-tight sm:text-2xl'>
                         {t('Build on your API gateway in minutes')}
                       </h3>
                       <p className='text-muted-foreground max-w-xl text-sm leading-relaxed'>
                         {t(
                           'A focused home for keys, balance, routing, and service health.'
                         )}
-                      </p>
+                      </p> */}
                     </div>
                     <div className='flex flex-wrap items-center gap-2'>
                       <Button
@@ -621,27 +591,28 @@ export function OverviewDashboard() {
                     </div>
                   </div>
 
-                  <ol className='bg-background/45 rounded-2xl border p-2 backdrop-blur'>
+                  <ol className='flex flex-col'>
                     {startSteps.map((step, index) => (
                       <StartStepItem
                         key={step.title}
                         step={step}
-                        index={index}
                         isLast={index === startSteps.length - 1}
                       />
                     ))}
                   </ol>
                 </div>
 
-                <RequestPreview
+                {/* First API request preview hidden per request — may restore later */}
+                {/* <RequestPreview
                   example={requestExample}
                   signals={heroSignals}
-                />
+                /> */}
               </div>
             </div>
           </CardStaggerItem>
 
-          <CardStaggerItem className='bg-card h-full rounded-2xl border p-4 shadow-xs sm:p-5'>
+          {/* Recommended actions panel hidden per request — may restore later */}
+          {/* <CardStaggerItem className='bg-card h-full rounded-2xl border border-border/60 p-5 sm:p-6'>
             <div className='flex h-full flex-col gap-4'>
               <div className='flex flex-col gap-1'>
                 <div className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
@@ -657,16 +628,16 @@ export function OverviewDashboard() {
                 ))}
               </div>
             </div>
-          </CardStaggerItem>
+          </CardStaggerItem> */}
         </CardStaggerContainer>
       ) : (
         <CardStaggerContainer>
-          <CardStaggerItem className='bg-card overflow-hidden rounded-2xl border shadow-xs'>
+          <CardStaggerItem className='bg-card overflow-hidden rounded-2xl border border-border/60'>
             <div className='relative overflow-hidden px-4 py-3 sm:px-5'>
               <SetupGuideBackdrop compact />
               <div className='relative flex flex-wrap items-center justify-between gap-3'>
                 <div className='flex min-w-0 items-center gap-3'>
-                  <span className='bg-background/70 flex size-9 shrink-0 items-center justify-center rounded-xl border shadow-xs'>
+                  <span className='bg-background flex size-9 shrink-0 items-center justify-center rounded-lg border border-border'>
                     <Check className='text-success size-4' aria-hidden='true' />
                   </span>
                   <div className='min-w-0'>

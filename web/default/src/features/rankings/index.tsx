@@ -18,8 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { useAuthStore } from '@/stores/auth-store'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PublicLayout } from '@/components/layout'
+import { AdaptiveLayout } from '@/components/layout'
 import { PageTransition } from '@/components/page-transition'
 import {
   MarketShareSection,
@@ -34,6 +35,7 @@ const VALID_PERIODS: RankingPeriod[] = ['today', 'week', 'month', 'year', 'all']
 
 export function Rankings() {
   const { t } = useTranslation()
+  const isAuthenticated = !!useAuthStore((s) => s.auth.user)
   const search = useSearch({ from: '/rankings/' })
   const navigate = useNavigate()
 
@@ -54,7 +56,7 @@ export function Rankings() {
   }
 
   return (
-    <PublicLayout showMainContainer={false}>
+    <AdaptiveLayout showMainContainer={false}>
       <div className='relative'>
         <div
           aria-hidden
@@ -71,7 +73,11 @@ export function Rankings() {
               'linear-gradient(to bottom, black 40%, transparent 100%)',
           }}
         />
-        <PageTransition className='relative mx-auto w-full max-w-[1280px] space-y-8 px-3 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12 xl:px-8'>
+        <PageTransition
+          className={`relative mx-auto w-full max-w-[1280px] space-y-8 px-3 pb-10 sm:px-6 sm:pb-12 xl:px-8 ${
+            isAuthenticated ? 'pt-6 sm:pt-8' : 'pt-16 sm:pt-20'
+          }`}
+        >
           <RankingsHero period={period} onPeriodChange={handlePeriodChange} />
 
           {rankingsQuery.isLoading ? (
@@ -106,7 +112,7 @@ export function Rankings() {
           )}
         </PageTransition>
       </div>
-    </PublicLayout>
+    </AdaptiveLayout>
   )
 }
 

@@ -35,3 +35,21 @@ data/
 .test
 token_estimator_test.go
 skills-lock.json
+
+# 本地临时/构建产物/日志（勿提交）
+*.log
+*.bak
+*.tar
+*.tar.gz
+*.exe~
+NUL
+%SRC%
+fix_theme.js
+fix_theme.py
+dev-start.bat
+dev-start.ps1
+dev.ps1
+.agents/
+.codex-skills/
+pic/
+scripts/

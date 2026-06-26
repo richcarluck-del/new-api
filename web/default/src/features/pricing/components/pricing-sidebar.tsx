@@ -28,13 +28,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import {
-  ENDPOINT_TYPES,
-  FILTER_ALL,
-  QUOTA_TYPES,
-  getEndpointTypeLabels,
-  getQuotaTypeLabels,
-} from '../constants'
+import { FILTER_ALL } from '../constants'
 import { parseTags } from '../lib/filters'
 import type { PricingModel, PricingVendor } from '../types'
 
@@ -54,13 +48,9 @@ type FilterSectionProps = {
 }
 
 export interface PricingSidebarProps {
-  quotaTypeFilter: string
-  endpointTypeFilter: string
   vendorFilter: string
   groupFilter: string
   tagFilter: string
-  onQuotaTypeChange: (value: string) => void
-  onEndpointTypeChange: (value: string) => void
   onVendorChange: (value: string) => void
   onGroupChange: (value: string) => void
   onTagChange: (value: string) => void
@@ -71,6 +61,7 @@ export interface PricingSidebarProps {
   models: PricingModel[]
   hasActiveFilters: boolean
   onClearFilters: () => void
+  orientation?: 'vertical' | 'horizontal'
   className?: string
 }
 
@@ -154,10 +145,29 @@ function FilterSection(props: FilterSectionProps) {
   )
 }
 
+function InlineFilterSection(props: FilterSectionProps) {
+  return (
+    <div className='flex min-w-0 flex-col gap-1.5'>
+      <span className='text-muted-foreground text-xs font-semibold'>
+        {props.title}
+      </span>
+      <div className='flex flex-wrap gap-1.5'>
+        {props.options.map((option) => (
+          <FilterChip
+            key={option.value}
+            option={option}
+            active={props.value === option.value}
+            onClick={() => props.onChange(option.value)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function PricingSidebar(props: PricingSidebarProps) {
   const { t } = useTranslation()
-  const quotaTypeLabels = getQuotaTypeLabels(t)
-  const endpointTypeLabels = getEndpointTypeLabels(t)
+  const isHorizontal = props.orientation === 'horizontal'
 
   const vendorOptions: FilterOption[] = [
     {
@@ -190,24 +200,6 @@ export function PricingSidebar(props: PricingSidebarProps) {
     })),
   ]
 
-  const quotaOptions: FilterOption[] = [
-    {
-      value: QUOTA_TYPES.ALL,
-      label: quotaTypeLabels[QUOTA_TYPES.ALL],
-      count: props.models.length,
-    },
-    {
-      value: QUOTA_TYPES.TOKEN,
-      label: quotaTypeLabels[QUOTA_TYPES.TOKEN],
-      count: countBy(props.models, (model) => model.quota_type === 0),
-    },
-    {
-      value: QUOTA_TYPES.REQUEST,
-      label: quotaTypeLabels[QUOTA_TYPES.REQUEST],
-      count: countBy(props.models, (model) => model.quota_type === 1),
-    },
-  ]
-
   const tagOptions: FilterOption[] = [
     {
       value: FILTER_ALL,
@@ -225,23 +217,49 @@ export function PricingSidebar(props: PricingSidebarProps) {
     })),
   ]
 
-  const endpointOptions: FilterOption[] = [
-    {
-      value: ENDPOINT_TYPES.ALL,
-      label: endpointTypeLabels[ENDPOINT_TYPES.ALL],
-      count: props.models.length,
-    },
-    ...Object.entries(endpointTypeLabels)
-      .filter(([value]) => value !== ENDPOINT_TYPES.ALL)
-      .map(([value, label]) => ({
-        value,
-        label,
-        count: countBy(
-          props.models,
-          (model) => model.supported_endpoint_types?.includes(value) ?? false
-        ),
-      })),
-  ]
+  if (isHorizontal) {
+    return (
+      <div
+        className={cn(
+          'rounded-xl border p-3',
+          props.className
+        )}
+      >
+        <div className='flex flex-wrap items-start gap-x-6 gap-y-3'>
+          <InlineFilterSection
+            title={t('Groups')}
+            value={props.groupFilter}
+            options={groupOptions}
+            onChange={props.onGroupChange}
+          />
+          <InlineFilterSection
+            title={t('All Vendors')}
+            value={props.vendorFilter}
+            options={vendorOptions}
+            onChange={props.onVendorChange}
+          />
+          <InlineFilterSection
+            title={t('Model Tags')}
+            value={props.tagFilter}
+            options={tagOptions}
+            onChange={props.onTagChange}
+          />
+          {props.hasActiveFilters && (
+            <Button
+              type='button'
+              variant='ghost'
+              size='sm'
+              onClick={props.onClearFilters}
+              className='ml-auto h-7 gap-1.5 px-2 text-xs'
+            >
+              <RotateCcw className='size-3.5' />
+              {t('Reset')}
+            </Button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <aside className={cn('rounded-xl border p-3', props.className)}>
@@ -289,18 +307,6 @@ export function PricingSidebar(props: PricingSidebarProps) {
           value={props.tagFilter}
           options={tagOptions}
           onChange={props.onTagChange}
-        />
-        <FilterSection
-          title={t('Pricing Type')}
-          value={props.quotaTypeFilter}
-          options={quotaOptions}
-          onChange={props.onQuotaTypeChange}
-        />
-        <FilterSection
-          title={t('Endpoint Type')}
-          value={props.endpointTypeFilter}
-          options={endpointOptions}
-          onChange={props.onEndpointTypeChange}
         />
       </div>
     </aside>

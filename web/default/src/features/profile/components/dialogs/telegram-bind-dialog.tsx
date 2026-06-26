@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -66,7 +66,7 @@ export function TelegramBindDialog({
 
           <div className='flex flex-col items-center justify-center gap-4 rounded-lg border p-6'>
             <div className='flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900'>
-              <Send className='h-6 w-6 text-blue-600 dark:text-blue-400' />
+              <Send className='h-6 w-6 text-orange-600 dark:text-orange-400' />
             </div>
 
             <div className='text-center'>

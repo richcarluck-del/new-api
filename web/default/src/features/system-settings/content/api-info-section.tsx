@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -98,7 +98,7 @@ const createApiInfoSchema = (t: (key: string) => string) =>
 type ApiInfoFormValues = z.infer<ReturnType<typeof createApiInfoSchema>>
 
 const colorOptions = [
-  { value: 'blue', label: 'Blue', bgClass: 'bg-blue-500' },
+  { value: 'blue', label: 'Blue', bgClass: 'bg-orange-500' },
   { value: 'green', label: 'Green', bgClass: 'bg-green-500' },
   { value: 'cyan', label: 'Cyan', bgClass: 'bg-cyan-500' },
   { value: 'purple', label: 'Purple', bgClass: 'bg-purple-500' },
@@ -272,7 +272,7 @@ export function ApiInfoSection({ enabled, data }: ApiInfoSectionProps) {
 
   const getColorClass = (color: string) => {
     return (
-      colorOptions.find((opt) => opt.value === color)?.bgClass || 'bg-blue-500'
+      colorOptions.find((opt) => opt.value === color)?.bgClass || 'bg-orange-500'
     )
   }
 

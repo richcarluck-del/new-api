@@ -47,10 +47,13 @@ type DataTableFacetedFilterProps<TData, TValue> = {
     value: string
     icon?: React.ComponentType<{ className?: string }>
     iconNode?: React.ReactNode
+    endNode?: React.ReactNode
     count?: number
   }[]
   /** Enable single select mode (only one option can be selected at a time) */
   singleSelect?: boolean
+  /** Override the popover content width (default `w-[200px]`). */
+  contentClassName?: string
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
@@ -58,6 +61,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   title,
   options,
   singleSelect = false,
+  contentClassName,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const { t } = useTranslation()
   const facets = column?.getFacetedUniqueValues()
@@ -107,7 +111,7 @@ export function DataTableFacetedFilter<TData, TValue>({
           </>
         )}
       </PopoverTrigger>
-      <PopoverContent className='w-[200px] p-0' align='start'>
+      <PopoverContent className={cn('w-[200px] p-0', contentClassName)} align='start'>
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
@@ -162,7 +166,11 @@ export function DataTableFacetedFilter<TData, TValue>({
                     <span className='min-w-0 flex-1 truncate'>
                       {t(option.label)}
                     </span>
-                    {typeof option.count === 'number' ? (
+                    {option.endNode ? (
+                      <span className='ms-auto flex shrink-0 items-center'>
+                        {option.endNode}
+                      </span>
+                    ) : typeof option.count === 'number' ? (
                       <span className='text-muted-foreground ms-auto flex h-4 min-w-4 items-center justify-center font-mono text-xs'>
                         {option.count}
                       </span>

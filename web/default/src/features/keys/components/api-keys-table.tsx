@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import {
@@ -30,12 +30,14 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { Database } from 'lucide-react'
+import { Database, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { getUserGroups } from '@/lib/api'
 import { formatQuota } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
+import { Button } from '@/components/ui/button'
 import {
   Empty,
   EmptyDescription,
@@ -51,6 +53,7 @@ import {
 } from '@/components/data-table'
 import { StatusBadge } from '@/components/status-badge'
 import { getApiKeys, searchApiKeys } from '../api'
+import { ApiEndpointsBar } from './api-endpoints-bar'
 import {
   API_KEY_STATUS,
   API_KEY_STATUS_OPTIONS,
@@ -60,6 +63,7 @@ import {
 import { type ApiKey } from '../types'
 import { ApiKeyCell } from './api-keys-cells'
 import { useApiKeysColumns } from './api-keys-columns'
+import { VendorIcon, GroupRatioBadge } from './api-key-group-picker'
 import { useApiKeys } from './api-keys-provider'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { DataTableRowActions } from './data-table-row-actions'
@@ -96,9 +100,11 @@ function ApiKeysMobileSkeleton() {
 function ApiKeysMobileList({
   table,
   isLoading,
+  onCreate,
 }: {
   table: ReturnType<typeof useReactTable<ApiKey>>
   isLoading: boolean
+  onCreate: () => void
 }) {
   const { t } = useTranslation()
   const rows = table.getRowModel().rows
@@ -120,6 +126,10 @@ function ApiKeysMobileList({
               )}
             </EmptyDescription>
           </EmptyHeader>
+          <Button size='sm' onClick={onCreate}>
+            <Plus className='h-4 w-4' />
+            {t('Create API Key')}
+          </Button>
         </Empty>
       </div>
     )
@@ -189,7 +199,7 @@ function ApiKeysMobileList({
 
 export function ApiKeysTable() {
   const { t } = useTranslation()
-  const { refreshTrigger } = useApiKeys()
+  const { refreshTrigger, setOpen } = useApiKeys()
   const columns = useApiKeysColumns()
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
@@ -208,8 +218,43 @@ export function ApiKeysTable() {
     navigate: route.useNavigate(),
     pagination: { defaultPage: 1, defaultPageSize: 20 },
     globalFilter: { enabled: true, key: 'filter' },
-    columnFilters: [{ columnId: 'status', searchKey: 'status', type: 'array' }],
+    columnFilters: [
+      { columnId: 'status', searchKey: 'status', type: 'array' },
+      { columnId: 'group', searchKey: 'group', type: 'array' },
+    ],
   })
+
+  // 选中的分组（单选）。后端按 group 精确过滤，跨页返回该分组下所有 key。
+  const groupFilter = useMemo(() => {
+    const found = columnFilters.find((f) => f.id === 'group')
+    const arr = Array.isArray(found?.value) ? (found!.value as string[]) : []
+    return arr[0] ?? ''
+  }, [columnFilters])
+
+  // 分组筛选 chip 的可选项（含 logo），来源与创建表单一致
+  const { data: groupsResp } = useQuery({
+    queryKey: ['user-self-groups'],
+    queryFn: getUserGroups,
+    staleTime: 5 * 60 * 1000,
+  })
+  const groupFilterOptions = useMemo(() => {
+    const data = groupsResp?.success ? groupsResp.data : undefined
+    if (!data) return []
+    return Object.entries(data).map(([value, info]) => ({
+      label: value,
+      value,
+      iconNode: (
+        <VendorIcon
+          channelType={value === 'auto' ? 0 : info.channel_type}
+          size={14}
+        />
+      ),
+      endNode:
+        value === 'auto' ? undefined : (
+          <GroupRatioBadge ratio={info.ratio} hideLabel />
+        ),
+    }))
+  }, [groupsResp])
 
   // Fetch data with React Query
   // eslint-disable-next-line @tanstack/query/exhaustive-deps
@@ -219,6 +264,7 @@ export function ApiKeysTable() {
       pagination.pageIndex + 1,
       pagination.pageSize,
       globalFilter,
+      groupFilter,
       refreshTrigger,
     ],
     queryFn: async () => {
@@ -237,10 +283,11 @@ export function ApiKeysTable() {
         }
       }
 
-      // Otherwise use pagination
+      // Otherwise use pagination (group filter applied server-side, cross-page)
       const result = await getApiKeys({
         p: pagination.pageIndex + 1,
         size: pagination.pageSize,
+        group: groupFilter || undefined,
       })
 
       if (!result.success) {
@@ -310,7 +357,14 @@ export function ApiKeysTable() {
       emptyDescription={t(
         'No API keys available. Create your first API key to get started.'
       )}
+      emptyAction={
+        <Button size='sm' onClick={() => setOpen('create')}>
+          <Plus className='h-4 w-4' />
+          {t('Create API Key')}
+        </Button>
+      }
       skeletonKeyPrefix='api-keys-skeleton'
+      afterToolbar={<ApiEndpointsBar />}
       toolbarProps={{
         searchPlaceholder: t('Filter by name or key...'),
         filters: [
@@ -320,9 +374,22 @@ export function ApiKeysTable() {
             options: API_KEY_STATUS_OPTIONS,
             singleSelect: true,
           },
+          {
+            columnId: 'group',
+            title: t('Group'),
+            options: groupFilterOptions,
+            singleSelect: true,
+            contentClassName: 'w-[420px]',
+          },
         ],
       }}
-      mobile={<ApiKeysMobileList table={table} isLoading={isLoading} />}
+      mobile={
+        <ApiKeysMobileList
+          table={table}
+          isLoading={isLoading}
+          onCreate={() => setOpen('create')}
+        />
+      }
       getRowClassName={(row) =>
         isDisabledApiKeyRow(row.original) ? DISABLED_ROW_DESKTOP : undefined
       }

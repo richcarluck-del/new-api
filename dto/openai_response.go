@@ -401,6 +401,7 @@ type ResponsesStreamResponse struct {
 	SummaryIndex *int                           `json:"summary_index,omitempty"`
 	ItemID       string                         `json:"item_id,omitempty"`
 	Part         *ResponsesReasoningSummaryPart `json:"part,omitempty"`
+	Arguments    string                         `json:"arguments,omitempty"`
 }
 
 // GetOpenAIError 从动态错误类型中提取OpenAIError结构

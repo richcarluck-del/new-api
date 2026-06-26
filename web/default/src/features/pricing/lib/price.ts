@@ -295,3 +295,70 @@ export function formatRequestPrice(
     abbreviate: false,
   })
 }
+
+/**
+ * Minimum (best) group ratio for a token-based model. This is the discount
+ * factor: site price = official price × minRatio. Returns 1 when no discount.
+ */
+export function getModelDiscountRatio(model: PricingModel): number {
+  const enableGroups = Array.isArray(model.enable_groups)
+    ? model.enable_groups
+    : []
+  const groupRatio = model.group_ratio || {}
+  return getMinGroupRatio(enableGroups, groupRatio)
+}
+
+export interface PriceComparison {
+  /** Official (list) price at group ratio 1, formatted in USD. */
+  official: string
+  /** Site price at the best group ratio, formatted in CNY. */
+  site: string
+}
+
+/** Format a USD-denominated number with a fixed currency symbol, trimming
+ * trailing zeros. Used for the official($)-vs-site(¥) comparison where the
+ * currencies are intentionally fixed regardless of the admin display config. */
+function formatFixedSymbol(amount: number, symbol: string): string {
+  const digits = Math.abs(amount) >= 1 ? 4 : 6
+  const trimmed = amount
+    .toFixed(digits)
+    .replace(/(\.[0-9]*?)0+$/, '$1')
+    .replace(/\.$/, '')
+  return `${symbol}${trimmed}`
+}
+
+/**
+ * Build the official-vs-site price comparison for a single token price type.
+ *
+ * Official price is computed at group ratio 1 (no discount) and shown in USD
+ * ($); the site price is computed at the model's best group ratio and shown in
+ * CNY (¥) using the same numeric base (no FX multiplication) — matching the
+ * home-page pricing convention where e.g. official $5 maps to site ¥1.75 at a
+ * 0.35 ratio. The real user discount (ratio ÷ FX rate) is derived separately
+ * by the caller.
+ *
+ * Returns null when the price type is unavailable for this model (e.g. the
+ * model has no cache ratio, or the model is pay-per-request).
+ */
+export function getPriceComparison(
+  model: PricingModel,
+  type: PriceType,
+  tokenUnit: TokenUnit
+): PriceComparison | null {
+  if (model.quota_type === QUOTA_TYPE_VALUES.REQUEST) {
+    return null
+  }
+
+  const officialRaw = calculateTokenPrice(model, type, 1)
+  if (Number.isNaN(officialRaw)) {
+    return null
+  }
+  const minRatio = getModelDiscountRatio(model)
+  const siteRaw = calculateTokenPrice(model, type, minRatio)
+
+  const divisor = TOKEN_UNIT_DIVISORS[tokenUnit]
+  return {
+    official: formatFixedSymbol(officialRaw / divisor, '$'),
+    site: formatFixedSymbol(siteRaw / divisor, '¥'),
+  }
+}

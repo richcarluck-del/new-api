@@ -61,7 +61,7 @@ function SheetContent({
   showCloseButton = true,
   ...props
 }: SheetPrimitive.Popup.Props & {
-  side?: 'top' | 'right' | 'bottom' | 'left'
+  side?: 'top' | 'right' | 'bottom' | 'left' | 'center'
   showCloseButton?: boolean
 }) {
   // Side-specific classes are emitted via JS conditionals (rather than
@@ -85,6 +85,8 @@ function SheetContent({
             'inset-x-0 top-0 h-auto border-b data-ending-style:translate-y-[-2.5rem] data-starting-style:translate-y-[-2.5rem]',
           side === 'bottom' &&
             'inset-x-0 bottom-0 h-auto border-t data-ending-style:translate-y-[2.5rem] data-starting-style:translate-y-[2.5rem]',
+          side === 'center' &&
+            'top-1/2 left-1/2 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl border data-ending-style:scale-95 data-starting-style:scale-95 sm:max-w-lg',
           className
         )}
         {...props}

@@ -99,12 +99,10 @@ export function Footer(props: FooterProps) {
   const { t } = useTranslation()
   const {
     systemName,
-    logo: systemLogo,
     footerHtml,
     demoSiteEnabled,
   } = useSystemConfig()
 
-  const displayLogo = systemLogo || props.logo || '/logo.png'
   const displayName = systemName || props.name || 'New API'
   const isDemoSiteMode = Boolean(demoSiteEnabled)
   const currentYear = new Date().getFullYear()
@@ -195,27 +193,10 @@ export function Footer(props: FooterProps) {
     <footer
       className={cn('border-border/40 relative z-10 border-t', props.className)}
     >
-      <div className='mx-auto max-w-6xl px-6 py-12 md:py-16'>
-        <div className='flex flex-col justify-between gap-10 md:flex-row md:gap-16'>
-          {/* Brand column */}
-          <div className='shrink-0'>
-            <Link to='/' className='group flex items-center gap-2.5'>
-              <img
-                src={displayLogo}
-                alt={displayName}
-                className='size-7 rounded-lg object-contain'
-              />
-              <span className='text-sm font-semibold tracking-tight'>
-                {displayName}
-              </span>
-            </Link>
-            <p className='text-muted-foreground/60 mt-3 max-w-[200px] text-xs leading-relaxed'>
-              {t('Powerful API Management Platform')}
-            </p>
-          </div>
-
-          {/* Links columns */}
-          {isDemoSiteMode && (
+      <div className='mx-auto max-w-6xl px-6 pt-12 pb-5 md:pt-16 md:pb-6'>
+        {/* Links columns — only shown in demo site mode */}
+        {isDemoSiteMode && (
+          <div className='flex flex-col justify-between gap-10 md:flex-row md:gap-16'>
             <div className='grid grid-cols-3 gap-8 md:gap-16'>
               {displayColumns.map((column, index) => (
                 <div key={index}>
@@ -232,16 +213,35 @@ export function Footer(props: FooterProps) {
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Bottom section */}
-        <div className='border-border/30 mt-12 flex flex-col items-center justify-between gap-3 border-t pt-6 sm:flex-row'>
+        {/* Bottom section: brand on left, copyright on right */}
+        <div
+          className={cn(
+            'flex flex-col items-center justify-between gap-4 sm:flex-row',
+            isDemoSiteMode && 'border-border/30 mt-12 border-t pt-6'
+          )}
+        >
+          <Link to='/' className='group flex items-center gap-2'>
+            <img
+              src='/sf-logo.png'
+              alt={displayName}
+              className='size-8 -mt-1.5 object-contain'
+            />
+            <div className='flex items-baseline gap-1'>
+              <span className='font-brand text-lg tracking-tight'>
+                顺风
+              </span>
+              <span className='text-muted-foreground text-[10px] font-semibold'>
+                API
+              </span>
+            </div>
+          </Link>
           <p className='text-muted-foreground/40 text-xs'>
             &copy; {currentYear} {displayName}.{' '}
             {props.copyright ?? t('footer.defaultCopyright')}
           </p>
-          <ProjectAttribution currentYear={currentYear} />
         </div>
       </div>
     </footer>

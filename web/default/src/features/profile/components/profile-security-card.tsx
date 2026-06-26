@@ -16,16 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Shield, Key, Trash2 } from 'lucide-react'
+import { Shield } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useDialogs } from '@/hooks/use-dialog'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TitledCard } from '@/components/ui/titled-card'
 import type { UserProfile } from '../types'
-import { AccessTokenDialog } from './dialogs/access-token-dialog'
 import { ChangePasswordDialog } from './dialogs/change-password-dialog'
-import { DeleteAccountDialog } from './dialogs/delete-account-dialog'
 
 // ============================================================================
 // Profile Security Card Component
@@ -36,7 +34,7 @@ interface ProfileSecurityCardProps {
   loading: boolean
 }
 
-type DialogKey = 'password' | 'token' | 'delete'
+type DialogKey = 'password'
 
 export function ProfileSecurityCard({
   profile,
@@ -63,28 +61,35 @@ export function ProfileSecurityCard({
 
   if (!profile) return null
 
-  const securityActions = [
+  const securityActions: {
+    icon: typeof Shield
+    title: string
+    description: string
+    action: () => void
+    variant: 'default' | 'destructive'
+  }[] = [
     {
       icon: Shield,
       title: t('Change Password'),
       description: t('Update your password to keep your account secure'),
       action: () => dialogs.open('password'),
-      variant: 'default' as const,
+      variant: 'default',
     },
-    {
-      icon: Key,
-      title: t('Access Token'),
-      description: t('Generate and manage your API access token'),
-      action: () => dialogs.open('token'),
-      variant: 'default' as const,
-    },
-    {
-      icon: Trash2,
-      title: t('Delete Account'),
-      description: t('Permanently delete your account and all data'),
-      action: () => dialogs.open('delete'),
-      variant: 'destructive' as const,
-    },
+    // Access Token & Delete Account hidden per request — may restore later
+    // {
+    //   icon: Key,
+    //   title: t('Access Token'),
+    //   description: t('Generate and manage your API access token'),
+    //   action: () => dialogs.open('token'),
+    //   variant: 'default' as const,
+    // },
+    // {
+    //   icon: Trash2,
+    //   title: t('Delete Account'),
+    //   description: t('Permanently delete your account and all data'),
+    //   action: () => dialogs.open('delete'),
+    //   variant: 'destructive' as const,
+    // },
   ]
 
   return (
@@ -131,21 +136,6 @@ export function ProfileSecurityCard({
         open={dialogs.isOpen('password')}
         onOpenChange={(open) =>
           open ? dialogs.open('password') : dialogs.close('password')
-        }
-        username={profile.username}
-      />
-
-      <AccessTokenDialog
-        open={dialogs.isOpen('token')}
-        onOpenChange={(open) =>
-          open ? dialogs.open('token') : dialogs.close('token')
-        }
-      />
-
-      <DeleteAccountDialog
-        open={dialogs.isOpen('delete')}
-        onOpenChange={(open) =>
-          open ? dialogs.open('delete') : dialogs.close('delete')
         }
         username={profile.username}
       />

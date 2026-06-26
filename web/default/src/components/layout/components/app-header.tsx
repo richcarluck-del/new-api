@@ -18,12 +18,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useNotifications } from '@/hooks/use-notifications'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
-import { ConfigDrawer } from '@/components/config-drawer'
+import { CustomerServiceButton } from '@/components/customer-service-button'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationButton } from '@/components/notification-button'
 import { NotificationDialog } from '@/components/notification-dialog'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
+import { ThemeSwitch } from '@/components/theme-switch'
 import { defaultTopNavLinks } from '../config/top-nav.config'
 import { type TopNavLink } from '../types'
 import { Header } from './header'
@@ -97,7 +98,7 @@ export function AppHeader({
   navLinks = defaultTopNavLinks,
   showTopNav = true,
   leftContent,
-  showSearch = true,
+  showSearch = false,
   rightContent,
   showNotifications = true,
   showConfigDrawer = true,
@@ -119,14 +120,16 @@ export function AppHeader({
           <div className='ms-2 flex items-center'>{leftContent}</div>
         ) : null}
 
+        {showTopNav && (
+          <div className='absolute left-1/2 hidden -translate-x-1/2 lg:block'>
+            <TopNav links={links} />
+          </div>
+        )}
+
         {rightContent ?? (
           <div className='ms-auto flex items-center gap-1 sm:gap-2'>
-            {showTopNav && (
-              <div className='me-1 hidden lg:block'>
-                <TopNav links={links} />
-              </div>
-            )}
             {showSearch && <Search />}
+            <CustomerServiceButton />
             {showNotifications && (
               <NotificationButton
                 unreadCount={notifications.unreadCount}
@@ -134,7 +137,7 @@ export function AppHeader({
               />
             )}
             <LanguageSwitcher />
-            {showConfigDrawer && <ConfigDrawer />}
+            {showConfigDrawer && <ThemeSwitch />}
             {showProfileDropdown && <ProfileDropdown />}
           </div>
         )}

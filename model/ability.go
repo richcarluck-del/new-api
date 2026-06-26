@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 
@@ -338,4 +339,64 @@ func FixAbility() (int, int, error) {
 	}
 	InitChannelCache()
 	return successCount, failCount, nil
+}
+
+type groupModelRow struct {
+	Group       string `gorm:"column:group_name"`
+	ChannelType int    `gorm:"column:channel_type"`
+	Model       string `gorm:"column:model"`
+}
+
+// GroupVendorInfo 聚合后每个分组的主厂商信息与启用模型列表
+type GroupVendorInfo struct {
+	ChannelType int      // 该分组模型数最多的渠道类型（主厂商）
+	Models      []string // 该分组去重后的启用模型列表
+}
+
+// GetGroupVendorInfo 统计每个分组的主厂商渠道类型与启用模型列表。
+// 跨库兼容(SQLite/MySQL/PG):仅用 JOIN + 等值过滤,聚合在 Go 内完成。
+func GetGroupVendorInfo() (map[string]GroupVendorInfo, error) {
+	var rows []groupModelRow
+	err := DB.Table("abilities").
+		Select("abilities."+commonGroupCol+" as group_name, channels.type as channel_type, abilities.model as model").
+		Joins("LEFT JOIN channels ON abilities.channel_id = channels.id").
+		Where("abilities.enabled = ?", true).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// group -> type -> set(model)
+	perGroupType := make(map[string]map[int]map[string]struct{})
+	perGroupModels := make(map[string]map[string]struct{})
+	for _, r := range rows {
+		if perGroupType[r.Group] == nil {
+			perGroupType[r.Group] = make(map[int]map[string]struct{})
+			perGroupModels[r.Group] = make(map[string]struct{})
+		}
+		if perGroupType[r.Group][r.ChannelType] == nil {
+			perGroupType[r.Group][r.ChannelType] = make(map[string]struct{})
+		}
+		perGroupType[r.Group][r.ChannelType][r.Model] = struct{}{}
+		perGroupModels[r.Group][r.Model] = struct{}{}
+	}
+
+	result := make(map[string]GroupVendorInfo, len(perGroupType))
+	for group, types := range perGroupType {
+		// 主厂商 = 模型数最多的 type；并列取较小 type id（确定性）
+		bestType, bestCount := 0, -1
+		for t, models := range types {
+			c := len(models)
+			if c > bestCount || (c == bestCount && t < bestType) {
+				bestType, bestCount = t, c
+			}
+		}
+		models := make([]string, 0, len(perGroupModels[group]))
+		for m := range perGroupModels[group] {
+			models = append(models, m)
+		}
+		sort.Strings(models)
+		result[group] = GroupVendorInfo{ChannelType: bestType, Models: models}
+	}
+	return result, nil
 }

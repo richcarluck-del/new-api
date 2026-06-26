@@ -232,6 +232,8 @@ export function useApiKeysColumns(): ColumnDef<ApiKey>[] {
         }
         return <GroupBadge group={group} ratio={ratio} />
       },
+      // 分组筛选在后端按 group 精确过滤（跨页），客户端不再二次过滤
+      filterFn: () => true,
       meta: { label: t('Group'), mobileHidden: true },
     },
     {

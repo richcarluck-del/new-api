@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@ import { type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 
-type StatCardTone = 'rose' | 'teal' | 'gray'
+type StatCardTone = 'cobalt' | 'sky' | 'violet'
 type StatCardSparklineVariant = 'bars' | 'line'
 type StatCardDetailTone =
   | 'default'
@@ -51,15 +51,24 @@ interface StatCardProps {
 }
 
 const TONE_CLASSES: Record<StatCardTone, string> = {
-  rose: 'from-rose-500/80 via-rose-300/70 to-rose-200/20 dark:from-rose-400/70 dark:via-rose-500/30 dark:to-rose-500/5',
-  teal: 'from-teal-500/80 via-teal-300/70 to-teal-200/20 dark:from-teal-400/70 dark:via-teal-500/30 dark:to-teal-500/5',
-  gray: 'from-muted-foreground/50 via-muted-foreground/20 to-transparent dark:from-muted-foreground/40 dark:via-muted-foreground/20',
+  cobalt:
+    'from-primary/80 via-primary/40 to-primary/10 dark:from-primary/70 dark:via-primary/30 dark:to-primary/5',
+  sky: 'from-sky-500/80 via-sky-400/50 to-sky-300/15 dark:from-sky-400/70 dark:via-sky-500/30 dark:to-sky-500/5',
+  violet:
+    'from-violet-500/80 via-violet-400/50 to-violet-300/15 dark:from-violet-400/70 dark:via-violet-500/30 dark:to-violet-500/5',
 }
 
 const LINE_TONE_CLASSES: Record<StatCardTone, string> = {
-  rose: 'text-warning',
-  teal: 'text-primary',
-  gray: 'text-muted-foreground',
+  cobalt: 'text-primary',
+  sky: 'text-sky-500 dark:text-sky-400',
+  violet: 'text-violet-500 dark:text-violet-400',
+}
+
+const CHIP_TONE_CLASSES: Record<StatCardTone, string> = {
+  cobalt: 'bg-primary/12 text-primary',
+  sky: 'bg-sky-500/12 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400',
+  violet:
+    'bg-violet-500/12 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400',
 }
 
 const DETAIL_TONE_CLASSES: Record<StatCardDetailTone, string> = {
@@ -183,7 +192,7 @@ function StatCardDetails(props: { details: StatCardDetail[] }) {
       {props.details.map((detail) => (
         <div
           key={detail.label}
-          className='bg-muted/40 rounded-lg border border-transparent px-2.5 py-2'
+          className='bg-muted/30 rounded-lg px-2 py-1.5'
         >
           <div className='text-muted-foreground truncate text-[11px] leading-none font-medium'>
             {detail.label}
@@ -205,18 +214,25 @@ function StatCardDetails(props: { details: StatCardDetail[] }) {
 
 export function StatCard(props: StatCardProps) {
   const Icon = props.icon
-  const tone = props.tone ?? 'gray'
+  const tone = props.tone ?? 'cobalt'
   const sparklineVariant = props.sparklineVariant ?? 'bars'
 
   return (
     <div className='group flex min-h-32 flex-col justify-between gap-3'>
       <div className='flex items-start justify-between gap-1'>
-        <div className='text-muted-foreground flex items-center gap-1.5 text-xs font-medium sm:gap-2'>
-          <Icon
-            className='text-muted-foreground/60 size-3.5 shrink-0'
+        <div className='flex min-w-0 items-center gap-2'>
+          <span
+            className={cn(
+              'flex size-7 shrink-0 items-center justify-center rounded-lg',
+              CHIP_TONE_CLASSES[tone]
+            )}
             aria-hidden='true'
-          />
-          <span className='line-clamp-2 leading-snug'>{props.title}</span>
+          >
+            <Icon className='size-4' />
+          </span>
+          <span className='text-muted-foreground line-clamp-2 text-xs leading-snug font-medium'>
+            {props.title}
+          </span>
         </div>
         {props.action && <div className='shrink-0'>{props.action}</div>}
       </div>
@@ -237,7 +253,7 @@ export function StatCard(props: StatCardProps) {
         </div>
       ) : (
         <div className='flex flex-col gap-1'>
-          <div className='text-foreground font-mono text-2xl font-semibold tracking-tight break-all tabular-nums'>
+          <div className='text-foreground font-mono text-2xl font-bold tracking-tight break-all tabular-nums'>
             {props.value}
           </div>
           <p className='text-muted-foreground/60 text-xs leading-relaxed'>

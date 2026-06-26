@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -289,6 +289,77 @@ For commercial licensing, please contact support@quantumnous.com
   --sidebar-accent: oklch(0.6359 0.1699 307.95);
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-ring: oklch(0.6359 0.1699 307.95);
+}
+
+
+/* ── Raycast Mode ─────────────────────────────────────────────────────── */
+/* Dark-first, warm-toned palette with near-zero borders.
+ * Surfaces are distinguished by subtle luminance shifts (like Raycast).
+ * Accent is a warm orange-corral, signatures of the Raycast brand. */
+[data-theme-preset='raycast'] {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.16 0.003 85);
+  --card: oklch(0.99 0.001 85);
+  --card-foreground: oklch(0.16 0.003 85);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0.003 85);
+  --primary: oklch(0.58 0.19 30);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0.004 85);
+  --secondary-foreground: oklch(0.2 0.005 85);
+  --muted: oklch(0.97 0.003 85);
+  --muted-foreground: oklch(0.45 0.004 85);
+  --accent: oklch(0.94 0.003 85);
+  --accent-foreground: oklch(0.16 0.003 85);
+  --ring: oklch(0.58 0.19 30);
+  --chart-1: oklch(0.58 0.19 30);
+  --chart-2: oklch(0.65 0.2 48);
+  --chart-3: oklch(0.55 0.18 280);
+  --chart-4: oklch(0.6 0.15 185);
+  --chart-5: oklch(0.72 0.05 85);
+  --border: oklch(0.91 0.005 85);
+  --input: oklch(0.93 0.005 85);
+  --sidebar: oklch(0.98 0.001 85);
+  --sidebar-foreground: oklch(0.16 0.003 85);
+  --sidebar-primary: oklch(0.58 0.19 30);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.95 0.003 85);
+  --sidebar-accent-foreground: oklch(0.23 0.006 85);
+  --sidebar-border: oklch(0.92 0.004 85);
+  --sidebar-ring: oklch(0.58 0.19 30);
+  --radius: 0.625rem;
+}
+.dark [data-theme-preset='raycast'] {
+  --background: oklch(0.17 0.003 85);
+  --foreground: oklch(0.91 0.011 90);
+  --card: oklch(0.205 0.004 85);
+  --card-foreground: oklch(0.91 0.011 90);
+  --popover: oklch(0.23 0.004 85);
+  --popover-foreground: oklch(0.91 0.011 90);
+  --primary: oklch(0.68 0.18 32);
+  --primary-foreground: oklch(0.17 0.003 85);
+  --secondary: oklch(0.25 0.004 85);
+  --secondary-foreground: oklch(0.92 0.005 85);
+  --muted: oklch(0.24 0.004 85);
+  --muted-foreground: oklch(0.7 0.008 85);
+  --accent: oklch(0.28 0.005 85);
+  --accent-foreground: oklch(0.95 0.004 85);
+  --ring: oklch(0.68 0.18 32);
+  --chart-1: oklch(0.68 0.18 32);
+  --chart-2: oklch(0.72 0.18 48);
+  --chart-3: oklch(0.62 0.16 280);
+  --chart-4: oklch(0.66 0.14 185);
+  --chart-5: oklch(0.78 0.06 85);
+  --border: oklch(0.31 0.005 85);
+  --input: oklch(0.28 0.005 85);
+  --sidebar: oklch(0.155 0.003 85);
+  --sidebar-foreground: oklch(0.89 0.011 90);
+  --sidebar-primary: oklch(0.68 0.18 32);
+  --sidebar-primary-foreground: oklch(0.17 0.003 85);
+  --sidebar-accent: oklch(0.25 0.004 85);
+  --sidebar-accent-foreground: oklch(0.94 0.004 85);
+  --sidebar-border: oklch(0.27 0.004 85);
+  --sidebar-ring: oklch(0.68 0.18 32);
 }
 
 /* ── Semantic surface bridge ──────────────────────────────────────────── */

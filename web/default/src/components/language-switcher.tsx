@@ -21,7 +21,7 @@ import {
   INTERFACE_LANGUAGE_OPTIONS,
   normalizeInterfaceLanguage,
 } from '@/i18n/languages'
-import { Languages, Check } from 'lucide-react'
+import { Check, ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
@@ -34,10 +34,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
+const LANGUAGE_MAP: Record<string, { code: string; label: string }> = {
+  zh: { code: 'CN', label: '中文' },
+  'zh-CN': { code: 'CN', label: '中文' },
+  'zh-TW': { code: 'CN', label: '中文' },
+  en: { code: 'US', label: 'English' },
+  'en-US': { code: 'US', label: 'English' },
+}
+
 export function LanguageSwitcher() {
-  const { i18n, t } = useTranslation()
+  const { i18n } = useTranslation()
   const user = useAuthStore((s) => s.auth.user)
   const currentLanguage = normalizeInterfaceLanguage(i18n.language)
+
+  // 只显示中英文
+  const languages = INTERFACE_LANGUAGE_OPTIONS.filter(
+    (lang) => lang.code === 'zh' || lang.code === 'en'
+  )
+
+  const currentDisplay = LANGUAGE_MAP[currentLanguage] || { code: 'US', label: 'English' }
 
   const handleChangeLanguage = useCallback(
     async (code: string) => {
@@ -56,27 +71,45 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
-        render={<Button variant='ghost' size='icon' className='h-9 w-9' />}
+        render={
+          <Button
+            variant='ghost'
+            size='sm'
+            className='h-8 gap-1 px-2 text-xs font-medium text-muted-foreground hover:text-foreground'
+          />
+        }
       >
-        <Languages className='size-[1.2rem]' />
-        <span className='sr-only'>{t('Change language')}</span>
+        <span className='text-[10px] font-semibold tracking-wide opacity-60'>
+          {currentDisplay.code}
+        </span>
+        <span className='text-sm'>{currentDisplay.label}</span>
+        <ChevronDown className='size-3 opacity-50' />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end'>
-        {INTERFACE_LANGUAGE_OPTIONS.map((lang) => (
-          <DropdownMenuItem
-            key={lang.code}
-            onClick={() => handleChangeLanguage(lang.code)}
-          >
-            {lang.label}
-            <Check
-              size={14}
+      <DropdownMenuContent align='end' className='min-w-[140px]'>
+        {languages.map((lang) => {
+          const display = LANGUAGE_MAP[lang.code]
+          const isActive = currentLanguage === lang.code
+          return (
+            <DropdownMenuItem
+              key={lang.code}
+              onClick={() => handleChangeLanguage(lang.code)}
               className={cn(
-                'ms-auto',
-                currentLanguage !== lang.code && 'hidden'
+                'flex items-center justify-between gap-3 px-3 py-2',
+                isActive && 'text-primary'
               )}
-            />
-          </DropdownMenuItem>
-        ))}
+            >
+              <div className='flex items-center gap-2'>
+                <span className='text-[10px] font-semibold tracking-wide opacity-60'>
+                  {display.code}
+                </span>
+                <span className='text-sm'>{display.label}</span>
+              </div>
+              {isActive && (
+                <Check className='size-4 text-primary' strokeWidth={2.5} />
+              )}
+            </DropdownMenuItem>
+          )
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   )

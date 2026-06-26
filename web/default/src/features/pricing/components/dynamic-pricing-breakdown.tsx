@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -266,7 +266,7 @@ export function DynamicPricingBreakdown({
                   <div className='mb-1.5 flex flex-wrap items-center gap-1.5'>
                     <Badge
                       variant='secondary'
-                      className='bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
+                      className='bg-blue-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
                     >
                       {tier.label || t('Default')}
                     </Badge>
@@ -343,7 +343,7 @@ export function DynamicPricingBreakdown({
                         <div className='flex flex-wrap items-center gap-1.5'>
                           <Badge
                             variant='secondary'
-                            className='bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
+                            className='bg-blue-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
                           >
                             {tier.label || t('Default')}
                           </Badge>

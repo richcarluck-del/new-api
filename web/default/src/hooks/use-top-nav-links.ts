@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useAuthStore } from '@/stores/auth-store'
 import { useStatus } from '@/hooks/use-status'
 import { parseHeaderNavModulesFromStatus } from '@/lib/nav-modules'
 
@@ -45,7 +44,6 @@ export type TopNavLink = {
 export function useTopNavLinks(): TopNavLink[] {
   const { t } = useTranslation()
   const { status } = useStatus()
-  const { auth } = useAuthStore()
 
   // Parse HeaderNavModules
   const modules = useMemo(() => {
@@ -54,11 +52,6 @@ export function useTopNavLinks(): TopNavLink[] {
     )
   }, [status])
 
-  // Documentation link (may be external)
-  const docsLink: string | undefined = status?.docs_link as string | undefined
-
-  const isAuthed = !!auth?.user
-
   const links: TopNavLink[] = []
 
   // Home
@@ -66,32 +59,23 @@ export function useTopNavLinks(): TopNavLink[] {
     links.push({ title: t('Home'), href: '/' })
   }
 
-  // Console -> /dashboard (new console path)
+  // Console -> /dashboard (entry back into the authenticated console from public pages)
   if (modules?.console !== false) {
     links.push({ title: t('Console'), href: '/dashboard' })
   }
 
-  // Pricing
-  const pricing = modules?.pricing
-  if (pricing && typeof pricing === 'object' && pricing.enabled) {
-    const requiresAuth = pricing.requireAuth && !isAuthed
-    links.push({ title: t('Model Square'), href: '/pricing', requiresAuth })
-  }
+  // Pricing — moved into the sidebar (under Task Logs); hidden from top nav (frontend-only).
+  // const pricing = modules?.pricing
+  // if (pricing && typeof pricing === 'object' && pricing.enabled) {
+  //   const requiresAuth = pricing.requireAuth && !isAuthed
+  //   links.push({ title: t('Model Square'), href: '/pricing', requiresAuth })
+  // }
 
-  // Rankings
-  const rankings = modules?.rankings
-  if (rankings && typeof rankings === 'object' && rankings.enabled) {
-    const requiresAuth = rankings.requireAuth && !isAuthed
-    links.push({ title: t('Rankings'), href: '/rankings', requiresAuth })
-  }
+  // Rankings removed from the top nav.
 
-  // Docs (supports external links)
+  // Docs — station-internal docs page (/docs)
   if (modules?.docs !== false) {
-    if (docsLink) {
-      links.push({ title: t('Docs'), href: docsLink, external: true })
-    } else {
-      links.push({ title: t('Docs'), href: '/docs' })
-    }
+    links.push({ title: t('Docs'), href: '/docs' })
   }
 
   // About

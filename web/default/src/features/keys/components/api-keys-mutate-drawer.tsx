@@ -73,16 +73,17 @@ import {
 } from '../lib'
 import { type ApiKey } from '../types'
 import {
-  ApiKeyGroupCombobox,
-  type ApiKeyGroupOption,
-} from './api-key-group-combobox'
+  ApiKeyGroupPicker,
+  VendorIcon,
+  type ApiKeyGroupPickerOption,
+} from './api-key-group-picker'
 import { useApiKeys } from './api-keys-provider'
 
 type ApiKeyMutateDrawerProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow?: ApiKey
-  side?: 'left' | 'right'
+  side?: 'left' | 'right' | 'center'
 }
 
 type ApiKeyFormSectionProps = {
@@ -143,12 +144,13 @@ export function ApiKeysMutateDrawer({
 
   const models = modelsData?.data || []
   const groupsRaw = groupsData?.data || {}
-  const groups: ApiKeyGroupOption[] = Object.entries(groupsRaw).map(
+  const groups: ApiKeyGroupPickerOption[] = Object.entries(groupsRaw).map(
     ([key, info]) => ({
       value: key,
-      label: key,
       desc: info.desc || key,
       ratio: info.ratio,
+      channelType: info.channel_type,
+      models: info.models,
     })
   )
   const backendHasAuto = groups.some((g) => g.value === 'auto')
@@ -268,6 +270,11 @@ export function ApiKeysMutateDrawer({
   const selectedGroup = form.watch('group')
   const unlimitedQuota = form.watch('unlimited_quota')
 
+  // 对普通用户隐藏复杂配置（数量/额度设置/高级设置）。
+  // 字段仍存在于表单中并使用安全默认值（无限额度、数量 1），仅不渲染。
+  // 如需恢复显示，将此开关改为 true。
+  const SHOW_ADVANCED_KEY_OPTIONS = false
+
   return (
     <Sheet
       open={open}
@@ -280,7 +287,12 @@ export function ApiKeysMutateDrawer({
     >
       <SheetContent
         side={side}
-        className='bg-background flex !h-dvh !w-screen max-w-none gap-0 overflow-hidden p-0 sm:!w-full sm:!max-w-[620px]'
+        className={cn(
+          'bg-background flex gap-0 overflow-hidden p-0',
+          side === 'center'
+            ? 'h-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] sm:!max-w-[940px]'
+            : '!h-dvh !w-screen max-w-none sm:!w-full sm:!max-w-[620px]'
+        )}
       >
         <SheetHeader className='bg-background border-b px-4 py-3 text-start sm:px-5 sm:py-4'>
           <SheetTitle className='text-base sm:text-lg'>
@@ -321,20 +333,37 @@ export function ApiKeysMutateDrawer({
               <FormField
                 control={form.control}
                 name='group'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('Group')}</FormLabel>
-                    <FormControl>
-                      <ApiKeyGroupCombobox
-                        options={groups}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder={t('Select a group')}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const selected = groups.find((g) => g.value === field.value)
+                  return (
+                    <FormItem>
+                      <div className='flex flex-wrap items-center gap-2'>
+                        <FormLabel>{t('Group')}</FormLabel>
+                        {selected && (
+                          <span className='bg-muted/60 text-foreground inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs'>
+                            <VendorIcon
+                              channelType={
+                                selected.value === 'auto'
+                                  ? 0
+                                  : selected.channelType
+                              }
+                              size={14}
+                            />
+                            <span className='font-medium'>{selected.value}</span>
+                          </span>
+                        )}
+                      </div>
+                      <FormControl>
+                        <ApiKeyGroupPicker
+                          options={groups}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
               />
 
               {selectedGroup === 'auto' && (
@@ -423,7 +452,7 @@ export function ApiKeysMutateDrawer({
                 )}
               />
 
-              {!isUpdate && (
+              {SHOW_ADVANCED_KEY_OPTIONS && !isUpdate && (
                 <FormField
                   control={form.control}
                   name='tokenCount'
@@ -453,11 +482,13 @@ export function ApiKeysMutateDrawer({
               )}
             </ApiKeyFormSection>
 
-            <ApiKeyFormSection
-              title={t('Quota Settings')}
-              description={t('Set quota amount and limits')}
-              icon={WalletCards}
-            >
+            {SHOW_ADVANCED_KEY_OPTIONS && (
+              <>
+              <ApiKeyFormSection
+                title={t('Quota Settings')}
+                description={t('Set quota amount and limits')}
+                icon={WalletCards}
+              >
               {!unlimitedQuota && (
                 <FormField
                   control={form.control}
@@ -601,6 +632,8 @@ export function ApiKeysMutateDrawer({
                 </CollapsibleContent>
               </section>
             </Collapsible>
+            </>
+            )}
           </form>
         </Form>
         <SheetFooter className='bg-background grid grid-cols-2 gap-2 border-t px-3 py-3 sm:flex sm:flex-row sm:justify-end sm:px-5 sm:py-4'>
