@@ -346,34 +346,45 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 
 func shouldRetry(c *gin.Context, openaiErr *types.NewAPIError, retryTimes int) bool {
 	if openaiErr == nil {
+		logger.LogInfo(c, "shouldRetry: openaiErr is nil, no retry")
 		return false
 	}
 	if service.ShouldSkipRetryAfterChannelAffinityFailure(c) {
+		logger.LogInfo(c, "shouldRetry: ShouldSkipRetryAfterChannelAffinityFailure=true, no retry")
 		return false
 	}
 	if types.IsChannelError(openaiErr) {
+		logger.LogInfo(c, "shouldRetry: IsChannelError=true, will retry")
 		return true
 	}
 	if types.IsSkipRetryError(openaiErr) {
+		logger.LogInfo(c, "shouldRetry: IsSkipRetryError=true, no retry")
 		return false
 	}
 	if retryTimes <= 0 {
+		logger.LogInfo(c, fmt.Sprintf("shouldRetry: retryTimes=%d <= 0, no retry", retryTimes))
 		return false
 	}
 	if _, ok := c.Get("specific_channel_id"); ok {
+		logger.LogInfo(c, "shouldRetry: specific_channel_id exists, no retry")
 		return false
 	}
 	code := openaiErr.StatusCode
 	if code >= 200 && code < 300 {
+		logger.LogInfo(c, fmt.Sprintf("shouldRetry: code=%d is 2xx, no retry", code))
 		return false
 	}
 	if code < 100 || code > 599 {
+		logger.LogInfo(c, fmt.Sprintf("shouldRetry: code=%d out of range, will retry", code))
 		return true
 	}
 	if operation_setting.IsAlwaysSkipRetryCode(openaiErr.GetErrorCode()) {
+		logger.LogInfo(c, fmt.Sprintf("shouldRetry: errorCode=%s is in skip list, no retry", openaiErr.GetErrorCode()))
 		return false
 	}
-	return operation_setting.ShouldRetryByStatusCode(code)
+	result := operation_setting.ShouldRetryByStatusCode(code)
+	logger.LogInfo(c, fmt.Sprintf("shouldRetry: code=%d, ShouldRetryByStatusCode=%v", code, result))
+	return result
 }
 
 func processChannelError(c *gin.Context, channelError types.ChannelError, err *types.NewAPIError) {
