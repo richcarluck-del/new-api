@@ -79,7 +79,7 @@ const CLAUDE_CODE_OPENAI_BLOCKS: DocBlock[] = [
     title: 'C:\\Users\\<用户名>\\.claude\\settings.json',
     code: `{
   "env": {
-    "ANTHROPIC_BASE_URL": "${API_BASE_URL}/codex",
+    "ANTHROPIC_BASE_URL": "${API_BASE_URL}",
     "ANTHROPIC_AUTH_TOKEN": "你的API Key",
     "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
     "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "1",
@@ -237,7 +237,7 @@ const OPENCODE_OPENAI_BLOCKS: DocBlock[] = [
       "npm": "@ai-sdk/openai",
       "name": "shunfeng",
       "options": {
-        "baseURL": "${API_BASE_URL}/codex/v1",
+        "baseURL": "${API_BASE_URL}/v1",
         "apiKey": "你的API Key",
         "setCacheKey": true
       },
@@ -360,7 +360,7 @@ const OPENCLAW_OPENAI_BLOCKS: DocBlock[] = [
     "mode": "merge",
     "providers": {
       "shunfeng": {
-        "baseUrl": "${API_BASE_URL}/codex/v1",
+        "baseUrl": "${API_BASE_URL}/v1",
         "apiKey": "你的API Key",
         "api": "openai-responses",
         "models": [
@@ -493,7 +493,7 @@ const HERMES_OPENAI_BLOCKS: DocBlock[] = [
   {
     type: 'code',
     code: `hermes config set model.provider custom
-hermes config set model.base_url ${API_BASE_URL}/codex/v1
+hermes config set model.base_url ${API_BASE_URL}/v1
 hermes config set model.api_key 你的API Key
 hermes config set model.default gpt-5.4
 hermes config set model.api_mode codex_responses`,
@@ -508,7 +508,7 @@ hermes config set model.api_mode codex_responses`,
     code: `model:
   default: gpt-5.4
   provider: custom
-  base_url: ${API_BASE_URL}/codex/v1
+  base_url: ${API_BASE_URL}/v1
   api_key: 你的API Key
   api_mode: codex_responses`,
   },
@@ -699,7 +699,7 @@ const CHERRY_STUDIO_OPENAI_BLOCKS: DocBlock[] = [
     type: 'text',
     text: '3\\. API 地址填入以下地址，API 密钥填入你的 API Key，点击获取模型列表。',
   },
-  { type: 'code', code: `${API_BASE_URL}/codex/v1` },
+  { type: 'code', code: `${API_BASE_URL}/v1` },
   { type: 'mockup', name: 'cherry-api-config' },
   { type: 'text', text: '4\\. 点击获取模型列表，即可看到可用模型。' },
   { type: 'mockup', name: 'cherry-model-list' },
@@ -743,7 +743,7 @@ const CODE_CALL_OPENAI_BLOCKS: DocBlock[] = [
     code: `from openai import OpenAI
 
 client = OpenAI(
-    base_url="${API_BASE_URL}/codex/v1",
+    base_url="${API_BASE_URL}/v1",
     api_key="你的API Key",
 )
 completion = client.chat.completions.create(
@@ -758,7 +758,7 @@ print(completion.choices[0].message)`,
   {
     type: 'code',
     title: 'curl',
-    code: `curl -X POST "${API_BASE_URL}/codex/v1/chat/completions" \\
+    code: `curl -X POST "${API_BASE_URL}/v1/chat/completions" \\
 -H "Content-Type: application/json" \\
 -H "Authorization: Bearer 你的API Key" \\
 -d '{
@@ -774,7 +774,7 @@ print(completion.choices[0].message)`,
 export const DOC_TABS: DocTab[] = [
   {
     id: 'openai',
-    label: 'OpenAI 官渠',
+    label: 'OpenAI',
     clients: [
       { id: 'codex', name: 'Codex', icon: 'Codex.Avatar', blocks: CODEX_OPENAI_BLOCKS },
       { id: 'cursor', name: 'Cursor', icon: 'Cursor.Avatar', blocks: CURSOR_OPENAI_BLOCKS },
@@ -789,7 +789,7 @@ export const DOC_TABS: DocTab[] = [
   },
   {
     id: 'max',
-    label: 'Max 官渠',
+    label: 'Anthropic',
     clients: [
       { id: 'claude-code', name: 'Claude Code', icon: 'ClaudeCode.Avatar', blocks: CLAUDE_CODE_MAX_BLOCKS },
       { id: 'codex', name: 'Codex', icon: 'Codex.Avatar', blocks: CODEX_MAX_BLOCKS },

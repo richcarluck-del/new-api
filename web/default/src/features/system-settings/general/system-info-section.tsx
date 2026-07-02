@@ -60,6 +60,11 @@ const _systemInfoSchema = z.object({
   legal: z.object({
     user_agreement: z.string().optional(),
     privacy_policy: z.string().optional(),
+    cross_border_transfer: z.string().optional(),
+    user_agreement_title: z.string().optional(),
+    privacy_policy_title: z.string().optional(),
+    cross_border_transfer_title: z.string().optional(),
+    updated_at: z.string().optional(),
   }),
 })
 
@@ -92,6 +97,19 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     legal: {
       user_agreement: normalizeValue(defaultValues.legal?.user_agreement),
       privacy_policy: normalizeValue(defaultValues.legal?.privacy_policy),
+      cross_border_transfer: normalizeValue(
+        defaultValues.legal?.cross_border_transfer
+      ),
+      user_agreement_title: normalizeValue(
+        defaultValues.legal?.user_agreement_title
+      ),
+      privacy_policy_title: normalizeValue(
+        defaultValues.legal?.privacy_policy_title
+      ),
+      cross_border_transfer_title: normalizeValue(
+        defaultValues.legal?.cross_border_transfer_title
+      ),
+      updated_at: normalizeValue(defaultValues.legal?.updated_at),
     },
   }
 
@@ -110,6 +128,11 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     legal: z.object({
       user_agreement: z.string().optional(),
       privacy_policy: z.string().optional(),
+      cross_border_transfer: z.string().optional(),
+      user_agreement_title: z.string().optional(),
+      privacy_policy_title: z.string().optional(),
+      cross_border_transfer_title: z.string().optional(),
+      updated_at: z.string().optional(),
     }),
   })
 
@@ -317,6 +340,25 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
 
             <FormField
               control={form.control}
+              name='legal.user_agreement_title'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('User Agreement Name')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t('User Agreement')} {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'Display name shown in the consent dialog. Leave empty to use the default name.'
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name='legal.user_agreement'
               render={({ field }) => (
                 <FormItem>
@@ -342,6 +384,25 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
 
             <FormField
               control={form.control}
+              name='legal.privacy_policy_title'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('Privacy Policy Name')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t('Privacy Policy')} {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'Display name shown in the consent dialog. Leave empty to use the default name.'
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name='legal.privacy_policy'
               render={({ field }) => (
                 <FormItem>
@@ -358,6 +419,76 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                   <FormDescription>
                     {t(
                       'Leave empty to disable the privacy policy requirement. Supports Markdown, HTML, or a full URL to redirect users.'
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='legal.cross_border_transfer_title'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {t('Cross-border Data Transfer Agreement Name')}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t('Cross-border Data Transfer Agreement')}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'Display name shown in the consent dialog. Leave empty to use the default name.'
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='legal.cross_border_transfer'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {t('Cross-border Data Transfer Agreement')}
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t(
+                        'Provide Markdown, HTML, or an external URL for the cross-border data transfer agreement'
+                      )}
+                      rows={6}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'Leave empty to disable the cross-border data transfer agreement requirement. Supports Markdown, HTML, or a full URL to redirect users.'
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='legal.updated_at'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('Terms Updated Date')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder='2026-06-28' {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'Shown in the consent dialog when terms are updated. Fill in manually (e.g., 2026-06-28).'
                     )}
                   </FormDescription>
                   <FormMessage />

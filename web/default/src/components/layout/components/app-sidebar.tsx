@@ -34,6 +34,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { getNavGroupsForPath } from '../lib/workspace-registry'
 import { NavGroup } from './nav-group'
@@ -48,7 +49,10 @@ import { NavGroup } from './nav-group'
  */
 export function AppSidebar() {
   const { t } = useTranslation()
-  const { collapsible, variant } = useLayout()
+  const { variant } = useLayout()
+  const { isMobile } = useSidebar()
+  // 桌面端写死永远展开（collapsible='none'，无收起/无 rail）；手机端保留抽屉式，否则会挤坏窄屏布局
+  const collapsible = isMobile ? 'offcanvas' : 'none'
   const { pathname } = useLocation()
   const userRole = useAuthStore((state) => state.auth.user?.role)
   const user = useAuthStore((state) => state.auth.user)
@@ -113,7 +117,7 @@ export function AppSidebar() {
           <ChevronRight className='text-muted-foreground size-4 shrink-0 transition-transform group-hover/usercard:translate-x-0.5 group-hover/usercard:text-primary group-data-[collapsible=icon]:hidden' />
         </Link>
       </SidebarFooter>
-      <SidebarRail />
+      {isMobile && <SidebarRail />}
     </Sidebar>
   )
 }

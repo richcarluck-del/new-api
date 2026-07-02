@@ -67,6 +67,11 @@ export type SiteSettings = {
   ServerAddress: string
   'legal.user_agreement': string
   'legal.privacy_policy': string
+  'legal.cross_border_transfer': string
+  'legal.user_agreement_title': string
+  'legal.privacy_policy_title': string
+  'legal.cross_border_transfer_title': string
+  'legal.updated_at': string
   HeaderNavModules: string
   SidebarModulesAdmin: string
 }

@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +20,7 @@ import (
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/QuantumNous/new-api/setting/system_setting"
 
 	"github.com/QuantumNous/new-api/constant"
 
@@ -154,6 +157,20 @@ func Register(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserInputInvalid, map[string]any{"Error": err.Error()})
 		return
 	}
+	// 法律协议单独同意校验：仅对已启用(非空)的协议要求对应勾选
+	legalSettings := system_setting.GetLegalSettings()
+	if legalSettings.UserAgreement != "" && !user.ConsentUserAgreement {
+		common.ApiErrorI18n(c, i18n.MsgUserConsentRequired)
+		return
+	}
+	if legalSettings.PrivacyPolicy != "" && !user.ConsentPrivacyPolicy {
+		common.ApiErrorI18n(c, i18n.MsgUserConsentRequired)
+		return
+	}
+	if legalSettings.CrossBorderTransfer != "" && !user.ConsentCrossBorderTransfer {
+		common.ApiErrorI18n(c, i18n.MsgUserConsentRequired)
+		return
+	}
 	if common.EmailVerificationEnabled {
 		if user.Email == "" || user.VerificationCode == "" {
 			common.ApiErrorI18n(c, i18n.MsgUserEmailVerificationRequired)
@@ -197,6 +214,25 @@ func Register(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserRegisterFailed)
 		return
 	}
+	// 记录用户对各协议的单独同意（举证用）。失败只记日志，不阻断注册——同意行为已发生。
+	recordConsent := func(docType, content string) {
+		sum := sha256.Sum256([]byte(content))
+		if err := model.RecordUserConsentIfAbsent(
+			insertedUser.Id, insertedUser.Username, docType,
+			hex.EncodeToString(sum[:]), c.ClientIP(), c.Request.UserAgent(),
+		); err != nil {
+			common.SysLog(fmt.Sprintf("failed to record user consent (%s) for %s: %v", docType, insertedUser.Username, err))
+		}
+	}
+	if legalSettings.UserAgreement != "" {
+		recordConsent("user_agreement", legalSettings.UserAgreement)
+	}
+	if legalSettings.PrivacyPolicy != "" {
+		recordConsent("privacy_policy", legalSettings.PrivacyPolicy)
+	}
+	if legalSettings.CrossBorderTransfer != "" {
+		recordConsent("cross_border_transfer", legalSettings.CrossBorderTransfer)
+	}
 	// 生成默认令牌
 	if constant.GenerateDefaultToken {
 		key, err := common.GenerateKey()
@@ -231,6 +267,66 @@ func Register(c *gin.Context) {
 		"message": "",
 	})
 	return
+}
+
+// ConsentItem 单条同意项（前端按当前协议 hash 提交）。
+type ConsentItem struct {
+	DocType     string `json:"doc_type"`
+	ContentHash string `json:"content_hash"`
+}
+
+// RecordConsent 登录态下记录用户对协议的(重新)同意，举证用。
+// 仅接受合法 docType、对应协议已启用、且提交 hash 与当前内容 hash 一致的项，防伪造。
+// 幂等：同一用户+文档+版本已记录则跳过。
+func RecordConsent(c *gin.Context) {
+	userId := c.GetInt("id")
+	if userId == 0 {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	var req struct {
+		Consents []ConsentItem `json:"consents"`
+	}
+	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	username := c.GetString("username")
+	ip := c.ClientIP()
+	ua := c.Request.UserAgent()
+	legal := system_setting.GetLegalSettings()
+	currentHash := func(docType string) string {
+		var content string
+		switch docType {
+		case "user_agreement":
+			content = legal.UserAgreement
+		case "privacy_policy":
+			content = legal.PrivacyPolicy
+		case "cross_border_transfer":
+			content = legal.CrossBorderTransfer
+		default:
+			return ""
+		}
+		if content == "" {
+			return ""
+		}
+		sum := sha256.Sum256([]byte(content))
+		return hex.EncodeToString(sum[:])
+	}
+	for _, item := range req.Consents {
+		want := currentHash(item.DocType)
+		if want == "" || item.ContentHash != want {
+			// 未知 docType / 协议未启用 / hash 不匹配（伪造或过期）→ 跳过
+			continue
+		}
+		if err := model.RecordUserConsentIfAbsent(userId, username, item.DocType, want, ip, ua); err != nil {
+			common.SysLog(fmt.Sprintf("failed to record consent (%s) for user %d: %v", item.DocType, userId, err))
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+	})
 }
 
 func GetAllUsers(c *gin.Context) {

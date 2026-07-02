@@ -39,6 +39,9 @@ export interface RegisterPayload {
   verification_code?: string
   aff?: string
   turnstile?: string
+  consent_user_agreement?: boolean
+  consent_privacy_policy?: boolean
+  consent_cross_border_transfer?: boolean
 }
 
 export interface PasswordResetPayload {
@@ -124,6 +127,14 @@ export interface SystemStatus {
     demo_site_enabled?: boolean
     user_agreement_enabled?: boolean
     privacy_policy_enabled?: boolean
+    cross_border_transfer_enabled?: boolean
+    user_agreement_title?: string
+    privacy_policy_title?: string
+    cross_border_transfer_title?: string
+    user_agreement_hash?: string
+    privacy_policy_hash?: string
+    cross_border_transfer_hash?: string
+    legal_updated_at?: string
     oauth_register_enabled?: boolean
     register_enabled?: boolean
     password_register_enabled?: boolean
@@ -166,6 +177,14 @@ export interface SystemStatus {
   demo_site_enabled?: boolean
   user_agreement_enabled?: boolean
   privacy_policy_enabled?: boolean
+  cross_border_transfer_enabled?: boolean
+  user_agreement_title?: string
+  privacy_policy_title?: string
+  cross_border_transfer_title?: string
+  user_agreement_hash?: string
+  privacy_policy_hash?: string
+  cross_border_transfer_hash?: string
+  legal_updated_at?: string
   oauth_register_enabled?: boolean
   register_enabled?: boolean
   password_register_enabled?: boolean

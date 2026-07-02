@@ -693,9 +693,11 @@ export function OverviewDashboard() {
               <PerformanceHealthPanel />
             </CardStaggerItem>
           )}
-          <CardStaggerItem>
-            <ApiInfoPanel />
-          </CardStaggerItem>
+          {isAdmin && (
+            <CardStaggerItem>
+              <ApiInfoPanel />
+            </CardStaggerItem>
+          )}
           <CardStaggerItem>
             <AnnouncementsPanel />
           </CardStaggerItem>
@@ -703,9 +705,11 @@ export function OverviewDashboard() {
             <FAQPanel />
           </CardStaggerItem>
         </div>
-        <CardStaggerItem>
-          <UptimePanel />
-        </CardStaggerItem>
+        {isAdmin && (
+          <CardStaggerItem>
+            <UptimePanel />
+          </CardStaggerItem>
+        )}
       </CardStaggerContainer>
     </div>
   )

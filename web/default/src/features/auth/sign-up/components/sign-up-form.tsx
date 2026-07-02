@@ -16,11 +16,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ShieldAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -47,11 +47,12 @@ import { Label } from '@/components/ui/label'
 import { PasswordInput } from '@/components/password-input'
 import { Turnstile } from '@/components/turnstile'
 import { register, wechatLoginByCode } from '@/features/auth/api'
-import { LegalConsent } from '@/features/auth/components/legal-consent'
+import { LegalConsentDialog } from '@/features/auth/components/legal-consent-dialog'
 import { OAuthProviders } from '@/features/auth/components/oauth-providers'
 import { registerFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { useEmailVerification } from '@/features/auth/hooks/use-email-verification'
+import { useLegalGate } from '@/features/auth/hooks/use-legal-gate'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
 import { getAffiliateCode } from '@/features/auth/lib/storage'
 
@@ -62,13 +63,19 @@ export function SignUpForm({
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [verificationCode, setVerificationCode] = useState('')
-  const [agreedToLegal, setAgreedToLegal] = useState(false)
+  const [consentDialogOpen, setConsentDialogOpen] = useState(false)
+  const [consentRejected, setConsentRejected] = useState(false)
   const [wechatCode, setWeChatCode] = useState('')
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
-  const legalConsentErrorMessage = t('Please agree to the legal terms first')
 
   const { status } = useStatus()
+  const { enabledDocs, updatedAt, needsConsent, agreeAll } =
+    useLegalGate(status)
+  // 进页门禁：未同意最新协议时禁用全部输入与按钮
+  const gated = needsConsent
+  const gateMessage = t('同意最新条款前，无法注册账号或使用快捷登录')
+
   const {
     isTurnstileEnabled,
     turnstileSiteKey,
@@ -101,7 +108,7 @@ export function SignUpForm({
   const emailVerificationRequired = !!status?.email_verification
   const hasUserAgreement = Boolean(status?.user_agreement_enabled)
   const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
-  const requiresLegalConsent = hasUserAgreement || hasPrivacyPolicy
+  const hasCrossBorderTransfer = Boolean(status?.cross_border_transfer_enabled)
   const oauthRegisterEnabled =
     status?.oauth_register_enabled ??
     status?.data?.oauth_register_enabled ??
@@ -122,17 +129,23 @@ export function SignUpForm({
     )
   }, [status])
 
+  // 进页若需要同意，自动弹出同意框（仅首次）；拒绝后改为显示提示框
+  const autoOpenedRef = useRef(false)
   useEffect(() => {
-    if (requiresLegalConsent) {
-      setAgreedToLegal(false)
-    } else {
-      setAgreedToLegal(true)
+    if (gated && !autoOpenedRef.current) {
+      autoOpenedRef.current = true
+      setConsentDialogOpen(true)
     }
-  }, [requiresLegalConsent])
+    if (!gated) {
+      autoOpenedRef.current = false
+      setConsentRejected(false)
+    }
+  }, [gated])
 
   async function onSubmit(data: z.infer<typeof registerFormSchema>) {
-    if (requiresLegalConsent && !agreedToLegal) {
-      toast.error(legalConsentErrorMessage)
+    if (gated) {
+      toast.warning(gateMessage)
+      setConsentDialogOpen(true)
       return
     }
 
@@ -157,9 +170,17 @@ export function SignUpForm({
         verification_code: verificationCode || undefined,
         aff: getAffiliateCode(),
         turnstile: turnstileToken,
+        // 门禁已解除即代表全部已启用协议均已同意
+        consent_user_agreement: hasUserAgreement ? true : undefined,
+        consent_privacy_policy: hasPrivacyPolicy ? true : undefined,
+        consent_cross_border_transfer: hasCrossBorderTransfer
+          ? true
+          : undefined,
       })
 
       if (res?.success) {
+        // 注册成功：写 localStorage 各 hash，避免跳登录页又被门禁拦截
+        agreeAll()
         toast.success(t('Account created! Please sign in'))
         redirectToLogin()
       }
@@ -175,8 +196,9 @@ export function SignUpForm({
   }
 
   const handleOpenWeChatDialog = () => {
-    if (requiresLegalConsent && !agreedToLegal) {
-      toast.error(legalConsentErrorMessage)
+    if (gated) {
+      toast.warning(gateMessage)
+      setConsentDialogOpen(true)
       return
     }
 
@@ -229,7 +251,11 @@ export function SignUpForm({
             <FormItem>
               <FormLabel>{t('Username')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('Enter your username')} {...field} />
+                <Input
+                  placeholder={t('Enter your username')}
+                  disabled={gated}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -246,6 +272,7 @@ export function SignUpForm({
               <FormControl>
                 <PasswordInput
                   placeholder={t('Enter password (8-20 characters)')}
+                  disabled={gated}
                   {...field}
                 />
               </FormControl>
@@ -262,7 +289,11 @@ export function SignUpForm({
             <FormItem>
               <FormLabel>{t('Confirm password')}</FormLabel>
               <FormControl>
-                <PasswordInput placeholder={t('Confirm password')} {...field} />
+                <PasswordInput
+                  placeholder={t('Confirm password')}
+                  disabled={gated}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -285,6 +316,7 @@ export function SignUpForm({
                     <Input
                       placeholder={t('name@example.com')}
                       type='email'
+                      disabled={gated}
                       {...field}
                     />
                   </FormControl>
@@ -299,13 +331,20 @@ export function SignUpForm({
                 <Input
                   placeholder={t('Verification code')}
                   value={verificationCode}
+                  disabled={gated}
                   onChange={(e) => setVerificationCode(e.target.value)}
                 />
               </div>
               <Button
                 variant='outline'
                 type='button'
-                disabled={isLoading || isSendingCode || isActive || !emailValue}
+                disabled={
+                  gated ||
+                  isLoading ||
+                  isSendingCode ||
+                  isActive ||
+                  !emailValue
+                }
                 onClick={handleSendVerificationCode}
               >
                 {isActive ? (
@@ -330,33 +369,57 @@ export function SignUpForm({
           </>
         )}
 
-        <LegalConsent
-          status={status}
-          checked={agreedToLegal}
-          onCheckedChange={setAgreedToLegal}
-          className='mt-1'
-        />
-
         {/* Submit Button */}
         <Button
           type='submit'
           className='mt-2 w-full justify-center gap-2'
-          disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+          disabled={isLoading || gated}
         >
           {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
           {t('Create account')}
         </Button>
 
+        {/* 门禁提示框：拒绝后显示 */}
+        {gated && consentRejected && (
+          <div className='mt-1 flex flex-col gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm'>
+            <div className='flex items-start gap-2 text-emerald-700 dark:text-emerald-300'>
+              <ShieldAlert className='mt-0.5 h-4 w-4 shrink-0' />
+              <span>{t('继续注册前需要先同意最新条款，未同意前账号信息输入和快捷登录会保持禁用。')}</span>
+            </div>
+            <Button
+              type='button'
+              size='sm'
+              className='self-end'
+              onClick={() => setConsentDialogOpen(true)}
+            >
+              {t('查看条款')}
+            </Button>
+          </div>
+        )}
+
         {oauthRegisterEnabled && (
           <OAuthProviders
             status={status}
-            disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+            disabled={isLoading || gated}
             onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
             isWeChatLoading={isWeChatSubmitting}
             className='pt-2'
           />
         )}
       </form>
+
+      <LegalConsentDialog
+        open={consentDialogOpen}
+        onOpenChange={setConsentDialogOpen}
+        enabledDocs={enabledDocs}
+        updatedAt={updatedAt}
+        onAgree={agreeAll}
+        onReject={() => {
+          // 拒绝：维持门禁禁用态，弹 toast 强提示 + 显示提示框
+          setConsentRejected(true)
+          toast.warning(gateMessage)
+        }}
+      />
 
       {hasWeChatLogin && (
         <Dialog
@@ -411,9 +474,7 @@ export function SignUpForm({
                 type='button'
                 onClick={handleWeChatLogin}
                 disabled={
-                  isWeChatSubmitting ||
-                  !wechatCode.trim() ||
-                  (requiresLegalConsent && !agreedToLegal)
+                  isWeChatSubmitting || !wechatCode.trim() || gated
                 }
                 className='gap-2'
               >

@@ -34,6 +34,11 @@ const defaultSiteSettings: SiteSettings = {
   ServerAddress: '',
   'legal.user_agreement': '',
   'legal.privacy_policy': '',
+  'legal.cross_border_transfer': '',
+  'legal.user_agreement_title': '',
+  'legal.privacy_policy_title': '',
+  'legal.cross_border_transfer_title': '',
+  'legal.updated_at': '',
   HeaderNavModules: '',
   SidebarModulesAdmin: '',
 }

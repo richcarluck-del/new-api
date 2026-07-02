@@ -16,6 +16,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export { UserAgreement } from './user-agreement'
-export { PrivacyPolicy } from './privacy-policy'
-export { CrossBorderTransfer } from './cross-border-transfer'
+import { useTranslation } from 'react-i18next'
+import { getCrossBorderTransfer } from './api'
+import { LegalDocument } from './legal-document'
+
+export function CrossBorderTransfer() {
+  const { t } = useTranslation()
+  return (
+    <LegalDocument
+      title={t('Cross-border Data Transfer Agreement')}
+      queryKey='cross-border-transfer'
+      fetchDocument={getCrossBorderTransfer}
+      emptyMessage={t(
+        'The administrator has not configured a cross-border data transfer agreement yet.'
+      )}
+    />
+  )
+}

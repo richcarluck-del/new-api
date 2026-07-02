@@ -29,6 +29,7 @@ import {
   SortAsc,
   RefreshCw,
   ArrowUpFromLine,
+  DatabaseZap,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -42,6 +43,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
@@ -51,6 +60,7 @@ import {
   handleUpdateAllBalances,
 } from '../lib'
 import { useChannels } from './channels-provider'
+import type { CacheWindow } from './channels-provider'
 
 export function ChannelsPrimaryButtons() {
   const { t } = useTranslation()
@@ -60,6 +70,8 @@ export function ChannelsPrimaryButtons() {
     setEnableTagMode,
     idSort,
     setIdSort,
+    cacheWindow,
+    setCacheWindow,
     upstream,
   } = useChannels()
   const queryClient = useQueryClient()
@@ -73,6 +85,12 @@ export function ChannelsPrimaryButtons() {
   const handleIdSortToggle = (checked: boolean) => {
     localStorage.setItem('channels-id-sort', String(checked))
     setIdSort(checked)
+  }
+
+  const handleCacheWindowChange = (value: CacheWindow | null) => {
+    if (!value) return
+    localStorage.setItem('channels-cache-window', value)
+    setCacheWindow(value)
   }
 
   return (
@@ -101,6 +119,31 @@ export function ChannelsPrimaryButtons() {
             checked={idSort}
             onCheckedChange={handleIdSortToggle}
           />
+        </div>
+
+        {/* Cache stats time window */}
+        <div className='hidden items-center gap-2 rounded-md border px-2 py-1 sm:flex'>
+          <DatabaseZap className='text-muted-foreground h-4 w-4' />
+          <Select
+            items={[
+              { value: 'today', label: t('Today') },
+              { value: '7d', label: t('Last 7 Days') },
+              { value: '30d', label: t('Last 30 Days') },
+            ]}
+            value={cacheWindow}
+            onValueChange={handleCacheWindowChange}
+          >
+            <SelectTrigger className='h-7 w-[110px] border-0 shadow-none'>
+              <SelectValue placeholder={t('Cache Window')} />
+            </SelectTrigger>
+            <SelectContent alignItemWithTrigger={false}>
+              <SelectGroup>
+                <SelectItem value='today'>{t('Today')}</SelectItem>
+                <SelectItem value='7d'>{t('Last 7 Days')}</SelectItem>
+                <SelectItem value='30d'>{t('Last 30 Days')}</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Create Channel */}

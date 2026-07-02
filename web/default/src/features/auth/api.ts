@@ -133,3 +133,20 @@ export async function bindEmail(
   })
   return res.data
 }
+
+// ----------------------------------------------------------------------------
+// Legal Consent
+// ----------------------------------------------------------------------------
+
+export interface ConsentItem {
+  doc_type: string
+  content_hash: string
+}
+
+// 登录态记录用户对各协议的同意（举证留痕，后端按 user+doc+hash 去重）。
+export async function recordConsent(
+  consents: ConsentItem[]
+): Promise<ApiResponse> {
+  const res = await api.post('/api/user/consent', { consents })
+  return res.data
+}

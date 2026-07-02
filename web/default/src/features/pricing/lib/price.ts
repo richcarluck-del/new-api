@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { formatCurrencyFromUSD } from '@/lib/currency'
-import { QUOTA_TYPE_VALUES, TOKEN_UNIT_DIVISORS } from '../constants'
+import { FILTER_ALL, QUOTA_TYPE_VALUES, TOKEN_UNIT_DIVISORS } from '../constants'
 import type { PricingModel, TokenUnit, PriceType } from '../types'
 
 // ----------------------------------------------------------------------------
@@ -71,6 +71,36 @@ function getMinGroupRatio(
   }
 
   return minRatio === Number.POSITIVE_INFINITY ? 1 : minRatio
+}
+
+/**
+ * Resolve which group ratio drives the displayed price.
+ *
+ * When a concrete group is selected in the model plaza (i.e. not "all" and the
+ * model is actually enabled under it), the price must reflect THAT group's
+ * ratio — otherwise a model shared across groups always shows the cheapest
+ * group's price regardless of the selected tab. When no concrete group is
+ * selected, fall back to the best (minimum) ratio as an indicative "from" price.
+ */
+export function resolveGroupRatio(
+  model: PricingModel,
+  selectedGroup?: string
+): number {
+  const enableGroups = Array.isArray(model.enable_groups)
+    ? model.enable_groups
+    : []
+  const groupRatio = model.group_ratio || {}
+
+  if (
+    selectedGroup &&
+    selectedGroup !== FILTER_ALL &&
+    enableGroups.includes(selectedGroup) &&
+    groupRatio[selectedGroup] !== undefined
+  ) {
+    return groupRatio[selectedGroup]
+  }
+
+  return getMinGroupRatio(enableGroups, groupRatio)
 }
 
 /**
@@ -166,17 +196,14 @@ export function formatPrice(
   tokenUnit: TokenUnit,
   showWithRecharge = false,
   priceRate = 1,
-  usdExchangeRate = 1
+  usdExchangeRate = 1,
+  selectedGroup?: string
 ): string {
   if (model.quota_type === QUOTA_TYPE_VALUES.REQUEST) {
     return '-'
   }
 
-  const enableGroups = Array.isArray(model.enable_groups)
-    ? model.enable_groups
-    : []
-  const groupRatio = model.group_ratio || {}
-  const minRatio = getMinGroupRatio(enableGroups, groupRatio)
+  const minRatio = resolveGroupRatio(model, selectedGroup)
 
   let priceInUSD = calculateTokenPrice(model, type, minRatio)
   priceInUSD = applyRechargeRate(
@@ -268,17 +295,14 @@ export function formatRequestPrice(
   model: PricingModel,
   showWithRecharge = false,
   priceRate = 1,
-  usdExchangeRate = 1
+  usdExchangeRate = 1,
+  selectedGroup?: string
 ): string {
   if (model.quota_type !== QUOTA_TYPE_VALUES.REQUEST) {
     return '-'
   }
 
-  const enableGroups = Array.isArray(model.enable_groups)
-    ? model.enable_groups
-    : []
-  const groupRatio = model.group_ratio || {}
-  const minRatio = getMinGroupRatio(enableGroups, groupRatio)
+  const minRatio = resolveGroupRatio(model, selectedGroup)
 
   let priceInUSD = (model.model_price || 0) * minRatio
 
@@ -300,12 +324,11 @@ export function formatRequestPrice(
  * Minimum (best) group ratio for a token-based model. This is the discount
  * factor: site price = official price × minRatio. Returns 1 when no discount.
  */
-export function getModelDiscountRatio(model: PricingModel): number {
-  const enableGroups = Array.isArray(model.enable_groups)
-    ? model.enable_groups
-    : []
-  const groupRatio = model.group_ratio || {}
-  return getMinGroupRatio(enableGroups, groupRatio)
+export function getModelDiscountRatio(
+  model: PricingModel,
+  selectedGroup?: string
+): number {
+  return resolveGroupRatio(model, selectedGroup)
 }
 
 export interface PriceComparison {
@@ -343,7 +366,8 @@ function formatFixedSymbol(amount: number, symbol: string): string {
 export function getPriceComparison(
   model: PricingModel,
   type: PriceType,
-  tokenUnit: TokenUnit
+  tokenUnit: TokenUnit,
+  selectedGroup?: string
 ): PriceComparison | null {
   if (model.quota_type === QUOTA_TYPE_VALUES.REQUEST) {
     return null
@@ -353,7 +377,7 @@ export function getPriceComparison(
   if (Number.isNaN(officialRaw)) {
     return null
   }
-  const minRatio = getModelDiscountRatio(model)
+  const minRatio = getModelDiscountRatio(model, selectedGroup)
   const siteRaw = calculateTokenPrice(model, type, minRatio)
 
   const divisor = TOKEN_UNIT_DIVISORS[tokenUnit]

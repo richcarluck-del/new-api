@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -492,6 +493,109 @@ func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelNa
 	}
 
 	return stat, nil
+}
+
+// ChannelCacheStat aggregates prompt-cache token usage for a single channel
+// over a time window. Cache token counts live inside each log's `other` JSON
+// blob (not dedicated columns), so aggregation is done in Go rather than SQL to
+// stay compatible with SQLite/MySQL/PostgreSQL.
+//
+// TotalInputTokens is the true total input token count summed across logs,
+// normalized per provider semantics: for OpenAI-style logs `prompt_tokens`
+// already includes cached read tokens, whereas for Anthropic-style logs
+// `prompt_tokens` is only the non-cached input and cache read/creation are
+// separate. Cache hit rate = CacheHitTokens / TotalInputTokens.
+type ChannelCacheStat struct {
+	ChannelId           int   `json:"channel_id"`
+	TotalInputTokens    int64 `json:"total_input_tokens"`
+	CacheHitTokens      int64 `json:"cache_hit_tokens"`
+	CacheCreationTokens int64 `json:"cache_creation_tokens"`
+}
+
+func otherMapInt(m map[string]interface{}, key string) int64 {
+	v, ok := m[key]
+	if !ok {
+		return 0
+	}
+	switch n := v.(type) {
+	case float64:
+		return int64(n)
+	case int64:
+		return n
+	case int:
+		return int64(n)
+	}
+	return 0
+}
+
+// SumCacheStatsByChannel sums prompt-cache token usage per channel over the
+// given window. Only consume-type logs are considered. Returns a map keyed by
+// channel id.
+func SumCacheStatsByChannel(startTimestamp int64, endTimestamp int64) (map[int]*ChannelCacheStat, error) {
+	tx := LOG_DB.Table("logs").
+		Select("channel_id", "prompt_tokens", "other").
+		Where("type = ?", LogTypeConsume)
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+
+	rows, err := tx.Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[int]*ChannelCacheStat)
+	for rows.Next() {
+		var channelId int
+		var promptTokens int
+		var other sql.NullString
+		if err := rows.Scan(&channelId, &promptTokens, &other); err != nil {
+			continue
+		}
+
+		stat := result[channelId]
+		if stat == nil {
+			stat = &ChannelCacheStat{ChannelId: channelId}
+			result[channelId] = stat
+		}
+
+		var cacheHit, cacheCreation int64
+		if other.Valid && other.String != "" {
+			if otherMap, mapErr := common.StrToMap(other.String); mapErr == nil && otherMap != nil {
+				cacheHit = otherMapInt(otherMap, "cache_tokens")
+				cache5m := otherMapInt(otherMap, "cache_creation_tokens_5m")
+				cache1h := otherMapInt(otherMap, "cache_creation_tokens_1h")
+				if cache5m > 0 || cache1h > 0 {
+					cacheCreation = cache5m + cache1h
+				} else {
+					cacheCreation = otherMapInt(otherMap, "cache_creation_tokens")
+				}
+			}
+		}
+
+		// Normalize total input tokens per provider semantics so cache hit rate
+		// stays <= 100%. Anthropic-style logs: prompt_tokens is only the
+		// non-cached input, so cache read/creation must be added back. A log is
+		// treated as Anthropic-style when it has cache creation or when cache
+		// read already exceeds prompt_tokens. OpenAI-style logs: prompt_tokens
+		// already includes cached read tokens, so use it as-is.
+		prompt := int64(promptTokens)
+		var totalInput int64
+		if cacheCreation > 0 || cacheHit > prompt {
+			totalInput = prompt + cacheHit + cacheCreation
+		} else {
+			totalInput = prompt
+		}
+
+		stat.TotalInputTokens += totalInput
+		stat.CacheHitTokens += cacheHit
+		stat.CacheCreationTokens += cacheCreation
+	}
+	return result, rows.Err()
 }
 
 func SumUsedToken(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string) (token int) {

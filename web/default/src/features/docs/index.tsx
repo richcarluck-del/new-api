@@ -17,12 +17,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useMemo, useState } from 'react'
-import { Code, FileText } from 'lucide-react'
+import { Code, FileText, HelpCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Markdown } from '@/components/ui/markdown'
 import { AdaptiveLayout } from '@/components/layout'
+import { useFAQ } from '@/features/dashboard/hooks/use-status-data'
+import type { FAQItem } from '@/features/dashboard/types'
 import { DocBlocks } from './components/doc-blocks'
 import { DOC_TABS } from './data'
 import type { ClientDoc, DocTab } from './types'
@@ -64,11 +67,58 @@ export function Docs() {
 }
 
 function TabPanel({ tab }: { tab: DocTab }) {
-  // 纯正文 tab（常见问题）
+  // 常见问题：渲染后台配置的 FAQ
+  if (tab.id === 'faq') {
+    return <FaqPanel />
+  }
+  // 纯正文 tab
   if (tab.clients === undefined) {
     return <PanelBody blocks={tab.blocks ?? []} />
   }
   return <ClientTabPanel clients={tab.clients} />
+}
+
+function FaqPanel() {
+  const { t } = useTranslation()
+  const { items: list, loading } = useFAQ()
+
+  if (loading) {
+    return (
+      <div className='text-muted-foreground flex min-h-[40vh] items-center justify-center'>
+        <p className='text-sm'>{t('加载中...')}</p>
+      </div>
+    )
+  }
+
+  if (!list.length) {
+    return (
+      <div className='text-muted-foreground flex min-h-[40vh] flex-col items-center justify-center gap-3 rounded-lg border border-dashed'>
+        <HelpCircle className='size-10' />
+        <p className='text-sm'>{t('内容即将上线')}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className='space-y-6'>
+      {list.map((item: FAQItem, idx: number) => {
+        const key = item.id ?? `faq-${idx}`
+        return (
+          <div
+            key={key}
+            className='border-border/60 rounded-lg border p-4 sm:p-5'
+          >
+            <Markdown className='mb-2 text-sm leading-relaxed font-semibold'>
+              {item.question}
+            </Markdown>
+            <Markdown className='text-muted-foreground text-sm leading-relaxed'>
+              {item.answer}
+            </Markdown>
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 function ClientTabPanel({ clients }: { clients: ClientDoc[] }) {

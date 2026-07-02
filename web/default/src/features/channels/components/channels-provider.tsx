@@ -17,15 +17,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useCallback } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { getChannelCacheStats } from '../api'
 import { useChannelUpstreamUpdates } from '../hooks/use-channel-upstream-updates'
 import { channelsQueryKeys } from '../lib'
-import type { Channel } from '../types'
+import type { Channel, ChannelCacheStat } from '../types'
 
 // ============================================================================
 // Types
 // ============================================================================
+
+export type CacheWindow = 'today' | '7d' | '30d'
+
+// Start-of-window Unix seconds for the given preset.
+function windowStartTimestamp(window: CacheWindow): number {
+  const now = new Date()
+  if (window === 'today') {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    return Math.floor(start.getTime() / 1000)
+  }
+  const days = window === '7d' ? 7 : 30
+  return Math.floor(now.getTime() / 1000) - days * 24 * 60 * 60
+}
 
 type DialogType =
   | 'create-channel'
@@ -53,6 +73,10 @@ type ChannelsContextType = {
   setEnableTagMode: (enabled: boolean) => void
   idSort: boolean
   setIdSort: (enabled: boolean) => void
+  cacheWindow: CacheWindow
+  setCacheWindow: (window: CacheWindow) => void
+  cacheStatsMap: Map<number, ChannelCacheStat>
+  cacheStatsLoading: boolean
   upstream: UpstreamUpdateState
 }
 
@@ -78,6 +102,29 @@ export function ChannelsProvider({ children }: { children: React.ReactNode }) {
   const [idSort, setIdSort] = useState(() => {
     return localStorage.getItem('channels-id-sort') === 'true'
   })
+  const [cacheWindow, setCacheWindow] = useState<CacheWindow>(() => {
+    const saved = localStorage.getItem('channels-cache-window')
+    return saved === 'today' || saved === '7d' || saved === '30d'
+      ? saved
+      : '7d'
+  })
+
+  const { data: cacheStatsData, isFetching: cacheStatsLoading } = useQuery({
+    queryKey: ['channel-cache-stat', cacheWindow],
+    queryFn: () =>
+      getChannelCacheStats({
+        start_timestamp: windowStartTimestamp(cacheWindow),
+      }),
+    staleTime: 60 * 1000,
+  })
+
+  const cacheStatsMap = useMemo(() => {
+    const map = new Map<number, ChannelCacheStat>()
+    for (const stat of cacheStatsData?.data ?? []) {
+      map.set(stat.channel_id, stat)
+    }
+    return map
+  }, [cacheStatsData])
 
   const queryClient = useQueryClient()
   const refreshChannels = useCallback(async () => {
@@ -98,6 +145,10 @@ export function ChannelsProvider({ children }: { children: React.ReactNode }) {
         setEnableTagMode,
         idSort,
         setIdSort,
+        cacheWindow,
+        setCacheWindow,
+        cacheStatsMap,
+        cacheStatsLoading,
         upstream,
       }}
     >

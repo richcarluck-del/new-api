@@ -31,6 +31,7 @@ import {
   CreditCard,
   ListTodo,
   Store,
+  Layers,
   Settings,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -112,7 +113,7 @@ export function useSidebarData(): SidebarData {
         title: '',
         items: [
           {
-            title: t('Wallet'),
+            title: t('Wallet / Recharge'),
             url: '/wallet',
             icon: Wallet,
           },
@@ -131,6 +132,11 @@ export function useSidebarData(): SidebarData {
             title: t('Channels'),
             url: '/channels',
             icon: Radio,
+          },
+          {
+            title: t('Pricing Group Overview'),
+            url: '/pricing-groups',
+            icon: Layers,
           },
           {
             title: t('Models'),

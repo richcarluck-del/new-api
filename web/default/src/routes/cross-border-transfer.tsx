@@ -16,6 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export { UserAgreement } from './user-agreement'
-export { PrivacyPolicy } from './privacy-policy'
-export { CrossBorderTransfer } from './cross-border-transfer'
+import { createFileRoute } from '@tanstack/react-router'
+import { CrossBorderTransfer } from '@/features/legal'
+
+export const Route = createFileRoute('/cross-border-transfer')({
+  component: CrossBorderTransfer,
+})

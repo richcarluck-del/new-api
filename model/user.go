@@ -36,6 +36,9 @@ type User struct {
 	WeChatId         string         `json:"wechat_id" gorm:"column:wechat_id;index"`
 	TelegramId       string         `json:"telegram_id" gorm:"column:telegram_id;index"`
 	VerificationCode string         `json:"verification_code" gorm:"-:all"`                                    // this field is only for Email verification, don't save it to database!
+	ConsentUserAgreement       bool `json:"consent_user_agreement" gorm:"-:all"`        // consent fields are only for registration, don't save them here!
+	ConsentPrivacyPolicy       bool `json:"consent_privacy_policy" gorm:"-:all"`        // recorded separately in user_consents table
+	ConsentCrossBorderTransfer bool `json:"consent_cross_border_transfer" gorm:"-:all"` // recorded separately in user_consents table
 	AccessToken      *string        `json:"access_token" gorm:"type:char(32);column:access_token;uniqueIndex"` // this token is for system management
 	Quota            int            `json:"quota" gorm:"type:int;default:0"`
 	UsedQuota        int            `json:"used_quota" gorm:"type:int;default:0;column:used_quota"` // used quota

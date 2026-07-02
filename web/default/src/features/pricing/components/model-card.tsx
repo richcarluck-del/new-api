@@ -47,6 +47,8 @@ export interface ModelCardProps {
   tokenUnit?: TokenUnit
   showRechargePrice?: boolean
   perf?: ModelPerfBadgeData
+  /** Currently selected group tab; drives which group's ratio prices reflect. */
+  selectedGroup?: string
 }
 
 export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
@@ -60,6 +62,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const tokenUnitLabel = tokenUnit === 'K' ? '1K' : '1M'
   const tags = parseTags(props.model.tags)
   const groups = props.model.enable_groups || []
+  const selectedGroup = props.selectedGroup
   const endpoints = props.model.supported_endpoint_types || []
   const vendorIcon = props.model.vendor_icon
     ? getLobeIcon(props.model.vendor_icon, 28)
@@ -74,7 +77,10 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         showRechargePrice,
         priceRate,
         usdExchangeRate,
-        groupRatioMultiplier: getDynamicDisplayGroupRatio(props.model),
+        groupRatioMultiplier: getDynamicDisplayGroupRatio(
+          props.model,
+          selectedGroup
+        ),
       })
     : null
 
@@ -85,7 +91,12 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       ? comparisonTypes
           .map((type) => ({
             type,
-            cmp: getPriceComparison(props.model, type, tokenUnit),
+            cmp: getPriceComparison(
+              props.model,
+              type,
+              tokenUnit,
+              selectedGroup
+            ),
           }))
           .filter(
             (col): col is typeof col & { cmp: PriceComparison } =>
@@ -95,9 +106,9 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   // Cache price (site, ¥) shown subtly in the price row when available.
   const cacheCmp =
     isTokenBased && !isDynamicPricing
-      ? getPriceComparison(props.model, 'cache', tokenUnit)
+      ? getPriceComparison(props.model, 'cache', tokenUnit, selectedGroup)
       : null
-  const discountRatio = getModelDiscountRatio(props.model)
+  const discountRatio = getModelDiscountRatio(props.model, selectedGroup)
   // Real user discount = group ratio ÷ USD→CNY rate (site is shown in ¥ at the
   // USD numeric base, so the FX rate is the extra discount). 0.35 / 7 => 0.05
   // => 0.5 折. Only show when there is a real discount.
@@ -109,7 +120,11 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   // Savings = (official×FX − site) / (official×FX) = 1 − realDiscount.
   const savingsPercent = hasDiscount ? Math.round((1 - realDiscount) * 100) : 0
 
-  const primaryGroup = groups[0]
+  // When a concrete group tab is selected and this model is in it, label with
+  // that group so the card matches the chosen tab; otherwise show the first
+  // enabled group as an indicative label.
+  const primaryGroup =
+    selectedGroup && groups.includes(selectedGroup) ? selectedGroup : groups[0]
   const bottomTags = [...endpoints.slice(0, 2), ...tags.slice(0, 2)]
   const hiddenCount =
     Math.max(groups.length - 1, 0) +
@@ -213,6 +228,9 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             <div className='bg-background flex w-36 shrink-0 flex-col gap-0.5 rounded-xl border px-3 py-2'>
               <span className='text-[10px] font-medium tracking-wider text-amber-600 uppercase dark:text-amber-400'>
                 {t('Our Price')}
+                <span className='tracking-normal normal-case'>
+                  （{t('单位')}：{tokenUnitLabel}）
+                </span>
               </span>
               <span className='font-mono text-sm font-bold tabular-nums text-amber-600 dark:text-amber-400'>
                 {comparisonRows.map((col, i) => (
@@ -247,7 +265,8 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
                 props.model,
                 showRechargePrice,
                 priceRate,
-                usdExchangeRate
+                usdExchangeRate,
+                selectedGroup
               )}
             </span>{' '}
             / {t('request')}
@@ -278,9 +297,6 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               {item}
             </span>
           ))}
-          <span className='text-muted-foreground/50 text-xs'>
-            {tokenUnitLabel}
-          </span>
           {hiddenCount > 0 && (
             <span className='text-muted-foreground/40 text-xs'>
               +{hiddenCount}

@@ -25,6 +25,7 @@ import type {
   BatchSetTagParams,
   Channel,
   ChannelBalanceResponse,
+  ChannelCacheStat,
   ChannelTestResponse,
   CopyChannelParams,
   CopyChannelResponse,
@@ -546,6 +547,22 @@ export async function getOllamaVersion(
  * Get all available groups (re-exported from users API for convenience)
  */
 export const getGroups = getUserGroups
+
+// ============================================================================
+// Channel Cache Statistics
+// ============================================================================
+
+/**
+ * Get per-channel prompt-cache token statistics over a time window.
+ * Timestamps are Unix seconds; omit for all-time.
+ */
+export async function getChannelCacheStats(params: {
+  start_timestamp?: number
+  end_timestamp?: number
+}): Promise<{ success: boolean; message?: string; data?: ChannelCacheStat[] }> {
+  const res = await api.get('/api/log/channel_cache_stat', { params })
+  return res.data
+}
 
 // ============================================================================
 // Prefill Groups (Model Groups)

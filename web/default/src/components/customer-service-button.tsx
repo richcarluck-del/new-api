@@ -20,6 +20,7 @@ import { useState } from 'react'
 import { Headphones } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useStatus } from '@/hooks/use-status'
+import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -50,14 +51,15 @@ export function CustomerServiceButton({
 }: CustomerServiceButtonProps) {
   const { t } = useTranslation()
   const { status } = useStatus()
+  const isAuthenticated = !!useAuthStore((s) => s.auth.user)
   const [open, setOpen] = useState(false)
 
   const enabled = Boolean(status?.['customer_service_enabled'])
   const config = (status?.['customer_service'] ?? {}) as CustomerServiceConfig
   const items = (config.items ?? []).filter((item) => item.image)
 
-  // Hide entirely when disabled or nothing to show.
-  if (!enabled || items.length === 0) {
+  // Only visible to signed-in users; hidden when disabled or nothing to show.
+  if (!isAuthenticated || !enabled || items.length === 0) {
     return null
   }
 

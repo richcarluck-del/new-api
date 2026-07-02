@@ -16,12 +16,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
-import { Loader2, LogIn, KeyRound } from 'lucide-react'
+import { Loader2, LogIn, KeyRound, ShieldAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import {
@@ -52,11 +52,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PasswordInput } from '@/components/password-input'
 import { Turnstile } from '@/components/turnstile'
-import { login, wechatLoginByCode } from '@/features/auth/api'
-import { LegalConsent } from '@/features/auth/components/legal-consent'
+import { login, recordConsent, wechatLoginByCode } from '@/features/auth/api'
+import type { ConsentItem } from '@/features/auth/api'
+import { LegalConsentDialog } from '@/features/auth/components/legal-consent-dialog'
 import { OAuthProviders } from '@/features/auth/components/oauth-providers'
 import { loginFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
+import { useLegalGate } from '@/features/auth/hooks/use-legal-gate'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
 import { beginPasskeyLogin, finishPasskeyLogin } from '@/features/auth/passkey'
 import type { AuthFormProps } from '@/features/auth/types'
@@ -69,15 +71,21 @@ export function UserAuthForm({
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [wechatCode, setWeChatCode] = useState('')
-  const [agreedToLegal, setAgreedToLegal] = useState(false)
   const [passkeySupported, setPasskeySupported] = useState(false)
   const [isPasskeyLoading, setIsPasskeyLoading] = useState(false)
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
-  const legalConsentErrorMessage = t('Please agree to the legal terms first')
+  const [consentDialogOpen, setConsentDialogOpen] = useState(false)
+  const [consentRejected, setConsentRejected] = useState(false)
   const loginFailedMessage = t('Login failed')
 
   const { status } = useStatus()
+  const { enabledDocs, updatedAt, needsConsent, agreeAll } =
+    useLegalGate(status)
+  // 进页门禁：未同意最新协议时禁用全部输入与按钮
+  const gated = needsConsent
+  const gateMessage = t('同意最新条款前，无法输入账号密码或使用快捷登录')
+
   const passkeyLoginEnabled = Boolean(
     status?.passkey_login ?? status?.data?.passkey_login
   )
@@ -90,22 +98,22 @@ export function UserAuthForm({
   } = useTurnstile()
   const { handleLoginSuccess, redirectTo2FA } = useAuthRedirect()
 
-  const hasUserAgreement = Boolean(status?.user_agreement_enabled)
-  const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
-  const requiresLegalConsent = hasUserAgreement || hasPrivacyPolicy
   const passkeyButtonDisabled =
-    isPasskeyLoading ||
-    !passkeySupported ||
-    (requiresLegalConsent && !agreedToLegal)
+    isPasskeyLoading || !passkeySupported || gated
   const hasWeChatLogin = Boolean(status?.wechat_login)
 
+  // 进页若需要同意，自动弹出同意框（仅首次）；拒绝后改为显示提示框
+  const autoOpenedRef = useRef(false)
   useEffect(() => {
-    if (requiresLegalConsent) {
-      setAgreedToLegal(false)
-    } else {
-      setAgreedToLegal(true)
+    if (gated && !autoOpenedRef.current) {
+      autoOpenedRef.current = true
+      setConsentDialogOpen(true)
     }
-  }, [requiresLegalConsent])
+    if (!gated) {
+      autoOpenedRef.current = false
+      setConsentRejected(false)
+    }
+  }, [gated])
 
   useEffect(() => {
     detectPasskeySupport()
@@ -135,9 +143,21 @@ export function UserAuthForm({
     )
   }, [status])
 
+  // 登录成功后举证落库（后端按 user+doc+hash 去重）
+  const recordConsentEvidence = () => {
+    const consents: ConsentItem[] = enabledDocs
+      .filter((d) => d.hash)
+      .map((d) => ({ doc_type: d.docType, content_hash: d.hash }))
+    if (consents.length > 0) {
+      recordConsent(consents).catch(() => {
+        /* 举证失败不阻塞登录 */
+      })
+    }
+  }
+
   async function onSubmit(data: z.infer<typeof loginFormSchema>) {
-    if (requiresLegalConsent && !agreedToLegal) {
-      toast.error(legalConsentErrorMessage)
+    if (gated) {
+      toast.warning(gateMessage)
       return
     }
 
@@ -157,6 +177,7 @@ export function UserAuthForm({
           return
         }
 
+        recordConsentEvidence()
         await handleLoginSuccess(res.data as { id?: number } | null, redirectTo)
         toast.success(t('Welcome back!'))
       }
@@ -168,8 +189,8 @@ export function UserAuthForm({
   }
 
   const handleOpenWeChatDialog = () => {
-    if (requiresLegalConsent && !agreedToLegal) {
-      toast.error(legalConsentErrorMessage)
+    if (gated) {
+      toast.warning(gateMessage)
       return
     }
 
@@ -194,6 +215,7 @@ export function UserAuthForm({
     try {
       const res = await wechatLoginByCode(wechatCode)
       if (res?.success) {
+        recordConsentEvidence()
         await handleLoginSuccess(res.data as { id?: number } | null, redirectTo)
         toast.success(t('Signed in via WeChat'))
         handleWeChatDialogChange(false)
@@ -208,8 +230,8 @@ export function UserAuthForm({
   }
 
   async function handlePasskeyLogin() {
-    if (requiresLegalConsent && !agreedToLegal) {
-      toast.error(legalConsentErrorMessage)
+    if (gated) {
+      toast.warning(gateMessage)
       return
     }
 
@@ -257,6 +279,7 @@ export function UserAuthForm({
         throw new Error(t('Missing user data from Passkey login response'))
       }
 
+      recordConsentEvidence()
       await handleLoginSuccess(
         finish.data as { id?: number } | null,
         redirectTo
@@ -292,6 +315,7 @@ export function UserAuthForm({
               <FormControl>
                 <Input
                   placeholder={t('Enter your username or email')}
+                  disabled={gated}
                   {...field}
                 />
               </FormControl>
@@ -308,7 +332,11 @@ export function UserAuthForm({
             <FormItem className='relative'>
               <FormLabel>{t('Password')}</FormLabel>
               <FormControl>
-                <PasswordInput placeholder={t('Enter password')} {...field} />
+                <PasswordInput
+                  placeholder={t('Enter password')}
+                  disabled={gated}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
               <Link
@@ -325,7 +353,7 @@ export function UserAuthForm({
         <Button
           type='submit'
           className='mt-2 w-full justify-center gap-2'
-          disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+          disabled={isLoading || gated}
         >
           {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
           {t('Sign in')}
@@ -341,12 +369,23 @@ export function UserAuthForm({
           </div>
         )}
 
-        <LegalConsent
-          status={status}
-          checked={agreedToLegal}
-          onCheckedChange={setAgreedToLegal}
-          className='mt-1'
-        />
+        {/* 门禁提示框：拒绝后显示 */}
+        {gated && consentRejected && (
+          <div className='mt-1 flex flex-col gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm'>
+            <div className='flex items-start gap-2 text-emerald-700 dark:text-emerald-300'>
+              <ShieldAlert className='mt-0.5 h-4 w-4 shrink-0' />
+              <span>{t('继续登录前需要先同意最新条款，未同意前账号密码输入和快捷登录会保持禁用。')}</span>
+            </div>
+            <Button
+              type='button'
+              size='sm'
+              className='self-end'
+              onClick={() => setConsentDialogOpen(true)}
+            >
+              {t('查看条款')}
+            </Button>
+          </div>
+        )}
 
         {passkeyLoginEnabled && (
           <div className='mt-2 space-y-1'>
@@ -375,11 +414,24 @@ export function UserAuthForm({
         {/* OAuth Providers */}
         <OAuthProviders
           status={status}
-          disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+          disabled={isLoading || gated}
           onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
           isWeChatLoading={isWeChatSubmitting}
         />
       </form>
+
+      <LegalConsentDialog
+        open={consentDialogOpen}
+        onOpenChange={setConsentDialogOpen}
+        enabledDocs={enabledDocs}
+        updatedAt={updatedAt}
+        onAgree={agreeAll}
+        onReject={() => {
+          // 拒绝：维持门禁禁用态，弹 toast 强提示 + 显示提示框
+          setConsentRejected(true)
+          toast.warning(gateMessage)
+        }}
+      />
 
       {hasWeChatLogin && (
         <Dialog
@@ -434,9 +486,7 @@ export function UserAuthForm({
                 type='button'
                 onClick={handleWeChatLogin}
                 disabled={
-                  isWeChatSubmitting ||
-                  !wechatCode.trim() ||
-                  (requiresLegalConsent && !agreedToLegal)
+                  isWeChatSubmitting || !wechatCode.trim() || gated
                 }
                 className='gap-2'
               >

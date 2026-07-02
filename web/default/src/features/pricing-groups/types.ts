@@ -16,6 +16,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export { UserAgreement } from './user-agreement'
-export { PrivacyPolicy } from './privacy-policy'
-export { CrossBorderTransfer } from './cross-border-transfer'
+export interface PricingGroupChannel {
+  id: number
+  name: string
+  type: number
+  status: number
+  priority: number
+  channel_ratio: number
+  models: string
+}
+
+export interface PricingGroupRow {
+  group: string
+  ratio: number
+  description: string
+  channels: PricingGroupChannel[]
+}

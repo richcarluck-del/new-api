@@ -122,6 +122,23 @@ func GetLogsStat(c *gin.Context) {
 	return
 }
 
+func GetChannelCacheStat(c *gin.Context) {
+	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
+	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
+
+	stats, err := model.SumCacheStatsByChannel(startTimestamp, endTimestamp)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	list := make([]*model.ChannelCacheStat, 0, len(stats))
+	for _, stat := range stats {
+		list = append(list, stat)
+	}
+	common.ApiSuccess(c, list)
+}
+
 func GetLogsSelfStat(c *gin.Context) {
 	username := c.GetString("username")
 	logType, _ := strconv.Atoi(c.Query("type"))

@@ -104,3 +104,45 @@ export function saveAffiliateCode(code: string): void {
     console.error('Failed to save affiliate code:', error)
   }
 }
+
+// ============================================================================
+// Legal Consent Storage
+// ============================================================================
+
+// 已同意的协议内容 hash 按 docType 存储。键名固定，避免与其它存储冲突。
+const LEGAL_CONSENT_KEY = 'legal_consent_hashes'
+
+export type LegalDocType =
+  | 'user_agreement'
+  | 'privacy_policy'
+  | 'cross_border_transfer'
+
+/**
+ * 读取已同意的各协议内容 hash（docType -> hash）。
+ */
+export function getAgreedLegalHashes(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(LEGAL_CONSENT_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    return typeof parsed === 'object' && parsed !== null ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * 记录某协议已同意的内容 hash（同意/更新后调用）。
+ */
+export function markAgreed(docType: LegalDocType, hash: string): void {
+  if (typeof window === 'undefined' || !hash) return
+  try {
+    const current = getAgreedLegalHashes()
+    current[docType] = hash
+    window.localStorage.setItem(LEGAL_CONSENT_KEY, JSON.stringify(current))
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to mark legal consent:', error)
+  }
+}

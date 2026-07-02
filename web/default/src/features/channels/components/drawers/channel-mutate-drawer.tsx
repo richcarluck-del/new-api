@@ -2510,6 +2510,31 @@ export function ChannelMutateDrawer({
                             </FormItem>
                           )}
                         />
+
+                        <FormField
+                          control={form.control}
+                          name='channel_ratio'
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('Channel Ratio')}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type='number'
+                                  step='any'
+                                  placeholder='1'
+                                  {...field}
+                                  onChange={(e) =>
+                                    field.onChange(Number(e.target.value))
+                                  }
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                {t('Display-only ratio shown in the channel and pricing group tables; does not affect billing')}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
 
                       <FormField

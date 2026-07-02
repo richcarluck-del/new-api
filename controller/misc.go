@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -19,6 +21,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// legalHash 返回协议正文的 SHA256 十六进制；空内容返回空串。
+// 前端据此与 localStorage 中已同意的 hash 比对，判定是否需要(重新)同意。
+func legalHash(s string) string {
+	if s == "" {
+		return ""
+	}
+	sum := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sum[:])
+}
 
 func TestStatus(c *gin.Context) {
 	err := model.PingDB()
@@ -118,6 +130,14 @@ func GetStatus(c *gin.Context) {
 		"setup":                       constant.Setup,
 		"user_agreement_enabled":      legalSetting.UserAgreement != "",
 		"privacy_policy_enabled":      legalSetting.PrivacyPolicy != "",
+		"cross_border_transfer_enabled": legalSetting.CrossBorderTransfer != "",
+		"user_agreement_title":          legalSetting.UserAgreementTitle,
+		"privacy_policy_title":          legalSetting.PrivacyPolicyTitle,
+		"cross_border_transfer_title":   legalSetting.CrossBorderTransferTitle,
+		"user_agreement_hash":           legalHash(legalSetting.UserAgreement),
+		"privacy_policy_hash":           legalHash(legalSetting.PrivacyPolicy),
+		"cross_border_transfer_hash":    legalHash(legalSetting.CrossBorderTransfer),
+		"legal_updated_at":              legalSetting.UpdatedAt,
 		"checkin_enabled":             operation_setting.GetCheckinSetting().Enabled,
 	}
 
@@ -210,6 +230,15 @@ func GetPrivacyPolicy(c *gin.Context) {
 		"success": true,
 		"message": "",
 		"data":    system_setting.GetLegalSettings().PrivacyPolicy,
+	})
+	return
+}
+
+func GetCrossBorderTransfer(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    system_setting.GetLegalSettings().CrossBorderTransfer,
 	})
 	return
 }

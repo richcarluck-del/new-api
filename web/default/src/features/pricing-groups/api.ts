@@ -16,6 +16,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export { UserAgreement } from './user-agreement'
-export { PrivacyPolicy } from './privacy-policy'
-export { CrossBorderTransfer } from './cross-border-transfer'
+import { api } from '@/lib/api'
+import type { PricingGroupRow } from './types'
+
+interface PricingGroupOverviewResponse {
+  success: boolean
+  message?: string
+  data?: PricingGroupRow[]
+}
+
+export async function getPricingGroupOverview(): Promise<PricingGroupRow[]> {
+  const res = await api.get<PricingGroupOverviewResponse>(
+    '/api/group/pricing-overview'
+  )
+  return res.data.data ?? []
+}

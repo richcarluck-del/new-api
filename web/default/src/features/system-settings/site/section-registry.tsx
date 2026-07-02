@@ -49,6 +49,12 @@ const SITE_SECTIONS = [
           legal: {
             user_agreement: settings['legal.user_agreement'],
             privacy_policy: settings['legal.privacy_policy'],
+            cross_border_transfer: settings['legal.cross_border_transfer'],
+            user_agreement_title: settings['legal.user_agreement_title'],
+            privacy_policy_title: settings['legal.privacy_policy_title'],
+            cross_border_transfer_title:
+              settings['legal.cross_border_transfer_title'],
+            updated_at: settings['legal.updated_at'],
           },
         }}
       />

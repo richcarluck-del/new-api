@@ -84,6 +84,16 @@ import {
 } from './dialogs/codex-usage-dialog'
 import { NumericSpinnerInput } from './numeric-spinner-input'
 
+// Maps response-time badge variant to an accurate i18n status label.
+// Used by the Response Status column so color-blind users can read the state.
+const RESPONSE_STATUS_LABEL: Record<string, string> = {
+  success: 'Excellent',
+  info: 'Good',
+  warning: 'Moderate',
+  danger: 'Slow',
+  neutral: 'Not tested',
+}
+
 function parseIonetMeta(otherInfo: string | null | undefined): null | {
   source?: string
   deployment_id?: string
@@ -441,6 +451,60 @@ function BalanceCell({ channel }: { channel: Channel }) {
         isRefreshing={isUpdating}
       />
     </TooltipProvider>
+  )
+}
+
+/**
+ * Cache statistics cells — read aggregated per-channel prompt-cache token
+ * usage from the channels provider (fetched over the selected time window).
+ */
+function CacheHitCell({ channel }: { channel: Channel }) {
+  const { cacheStatsMap } = useChannels()
+  if (isTagAggregateRow(channel)) {
+    return <span className='text-muted-foreground text-xs'>-</span>
+  }
+  const value = cacheStatsMap.get(channel.id)?.cache_hit_tokens ?? 0
+  return (
+    <span className='font-mono text-xs tabular-nums'>
+      {value.toLocaleString()}
+    </span>
+  )
+}
+
+function CacheCreationCell({ channel }: { channel: Channel }) {
+  const { cacheStatsMap } = useChannels()
+  if (isTagAggregateRow(channel)) {
+    return <span className='text-muted-foreground text-xs'>-</span>
+  }
+  const value = cacheStatsMap.get(channel.id)?.cache_creation_tokens ?? 0
+  return (
+    <span className='font-mono text-xs tabular-nums'>
+      {value.toLocaleString()}
+    </span>
+  )
+}
+
+function CacheHitRateCell({ channel }: { channel: Channel }) {
+  const { cacheStatsMap } = useChannels()
+  if (isTagAggregateRow(channel)) {
+    return <span className='text-muted-foreground text-xs'>-</span>
+  }
+  const stat = cacheStatsMap.get(channel.id)
+  const totalInput = stat?.total_input_tokens ?? 0
+  const hit = stat?.cache_hit_tokens ?? 0
+  if (totalInput === 0) {
+    return <span className='text-muted-foreground text-xs'>-</span>
+  }
+  const rate = (hit / totalInput) * 100
+  const variant =
+    rate >= 50 ? 'success' : rate >= 20 ? 'warning' : rate > 0 ? 'neutral' : 'neutral'
+  return (
+    <StatusBadge
+      label={`${rate.toFixed(1)}%`}
+      variant={variant}
+      size='sm'
+      copyable={false}
+    />
   )
 }
 
@@ -975,6 +1039,48 @@ export function useChannelsColumns(): ColumnDef<Channel>[] {
       enableSorting: false,
     },
 
+    // Channel Ratio column (display-only)
+    {
+      accessorKey: 'channel_ratio',
+      meta: { label: t('Channel Ratio'), mobileHidden: true },
+      header: t('Channel Ratio'),
+      cell: ({ row }) => (
+        <span className='tabular-nums'>{row.original.channel_ratio ?? 1}</span>
+      ),
+      size: 100,
+      enableSorting: false,
+    },
+
+    // Cache Hit tokens (display-only, over selected time window)
+    {
+      id: 'cache_hit_tokens',
+      meta: { label: t('Cache Hit'), mobileHidden: true },
+      header: t('Cache Hit'),
+      cell: ({ row }) => <CacheHitCell channel={row.original} />,
+      size: 110,
+      enableSorting: false,
+    },
+
+    // Cache Creation tokens (display-only, over selected time window)
+    {
+      id: 'cache_creation_tokens',
+      meta: { label: t('Cache Creation'), mobileHidden: true },
+      header: t('Cache Creation'),
+      cell: ({ row }) => <CacheCreationCell channel={row.original} />,
+      size: 110,
+      enableSorting: false,
+    },
+
+    // Cache Hit Rate (display-only, over selected time window)
+    {
+      id: 'cache_hit_rate',
+      meta: { label: t('Cache Hit Rate'), mobileHidden: true },
+      header: t('Cache Hit Rate'),
+      cell: ({ row }) => <CacheHitRateCell channel={row.original} />,
+      size: 100,
+      enableSorting: false,
+    },
+
     // Balance column (Used/Remaining)
     {
       accessorKey: 'balance',
@@ -1007,6 +1113,31 @@ export function useChannelsColumns(): ColumnDef<Channel>[] {
         )
       },
       size: 110,
+    },
+
+    // Response Status column (text label for color-blind accessibility)
+    {
+      id: 'response_status',
+      meta: { label: t('Response Status'), mobileHidden: true },
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t('Response Status')} />
+      ),
+      cell: ({ row }) => {
+        const responseTime = row.original.response_time
+        const config = getResponseTimeConfig(responseTime)
+        const labelKey = RESPONSE_STATUS_LABEL[config.variant] ?? config.label
+
+        return (
+          <StatusBadge
+            label={t(labelKey)}
+            variant={config.variant}
+            size='sm'
+            copyable={false}
+          />
+        )
+      },
+      size: 100,
+      enableSorting: false,
     },
 
     // Test Time column

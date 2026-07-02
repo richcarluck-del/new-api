@@ -34,6 +34,14 @@ export const channelInfoSchema = z.object({
 
 export type ChannelInfo = z.infer<typeof channelInfoSchema>
 
+// Per-channel prompt-cache token statistics over a time window.
+export interface ChannelCacheStat {
+  channel_id: number
+  total_input_tokens: number
+  cache_hit_tokens: number
+  cache_creation_tokens: number
+}
+
 export const channelSchema = z.object({
   id: z.number(),
   type: z.number(),
@@ -56,6 +64,7 @@ export const channelSchema = z.object({
   model_mapping: z.string().nullish(),
   status_code_mapping: z.string().nullish(),
   priority: z.number().nullish(),
+  channel_ratio: z.number().nullish(),
   auto_ban: z.number().nullish(),
   other_info: z.string().default(''),
   tag: z.string().nullish(),

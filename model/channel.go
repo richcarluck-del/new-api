@@ -41,8 +41,9 @@ type Channel struct {
 	ModelMapping       *string `json:"model_mapping" gorm:"type:text"`
 	//MaxInputTokens     *int    `json:"max_input_tokens" gorm:"default:0"`
 	StatusCodeMapping *string `json:"status_code_mapping" gorm:"type:varchar(1024);default:''"`
-	Priority          *int64  `json:"priority" gorm:"bigint;default:0"`
-	AutoBan           *int    `json:"auto_ban" gorm:"default:1"`
+	Priority          *int64   `json:"priority" gorm:"bigint;default:0"`
+	ChannelRatio      *float64 `json:"channel_ratio" gorm:"default:1"`
+	AutoBan           *int     `json:"auto_ban" gorm:"default:1"`
 	OtherInfo         string  `json:"other_info"`
 	Tag               *string `json:"tag" gorm:"index"`
 	Setting           *string `json:"setting" gorm:"type:text"` // 渠道额外设置
@@ -488,6 +489,13 @@ func (channel *Channel) GetWeight() int {
 	return int(*channel.Weight)
 }
 
+func (channel *Channel) GetChannelRatio() float64 {
+	if channel.ChannelRatio == nil {
+		return 1
+	}
+	return *channel.ChannelRatio
+}
+
 func (channel *Channel) GetBaseURL() string {
 	if channel.BaseURL == nil {
 		return ""
@@ -837,13 +845,57 @@ func updateChannelUsedQuota(id int, quota int) {
 }
 
 func DeleteChannelByStatus(status int64) (int64, error) {
-	result := DB.Where("status = ?", status).Delete(&Channel{})
-	return result.RowsAffected, result.Error
+	var channelIds []int
+	if err := DB.Model(&Channel{}).Where("status = ?", status).Pluck("id", &channelIds).Error; err != nil {
+		return 0, err
+	}
+	if len(channelIds) == 0 {
+		return 0, nil
+	}
+	tx := DB.Begin()
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	if err := tx.Where("channel_id IN (?)", channelIds).Delete(&Ability{}).Error; err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	result := tx.Where("status = ?", status).Delete(&Channel{})
+	if result.Error != nil {
+		tx.Rollback()
+		return 0, result.Error
+	}
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
+	return result.RowsAffected, nil
 }
 
 func DeleteDisabledChannel() (int64, error) {
-	result := DB.Where("status = ? or status = ?", common.ChannelStatusAutoDisabled, common.ChannelStatusManuallyDisabled).Delete(&Channel{})
-	return result.RowsAffected, result.Error
+	var channelIds []int
+	if err := DB.Model(&Channel{}).Where("status = ? or status = ?", common.ChannelStatusAutoDisabled, common.ChannelStatusManuallyDisabled).Pluck("id", &channelIds).Error; err != nil {
+		return 0, err
+	}
+	if len(channelIds) == 0 {
+		return 0, nil
+	}
+	tx := DB.Begin()
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	if err := tx.Where("channel_id IN (?)", channelIds).Delete(&Ability{}).Error; err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	result := tx.Where("status = ? or status = ?", common.ChannelStatusAutoDisabled, common.ChannelStatusManuallyDisabled).Delete(&Channel{})
+	if result.Error != nil {
+		tx.Rollback()
+		return 0, result.Error
+	}
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
+	return result.RowsAffected, nil
 }
 
 func GetPaginatedTags(offset int, limit int) ([]*string, error) {

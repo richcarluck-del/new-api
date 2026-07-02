@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
 import { DEFAULT_PRICING_PAGE_SIZE, DEFAULT_TOKEN_UNIT } from '../constants'
+import { hashStringToSeed, randomInRange, seededRandom } from '../lib/seed'
 import type { PricingModel, TokenUnit } from '../types'
 import { ModelCard } from './model-card'
 import type { ModelPerfBadgeData } from './model-perf-badge'
@@ -34,6 +35,21 @@ export interface ModelCardGridProps {
   usdExchangeRate?: number
   tokenUnit?: TokenUnit
   showRechargePrice?: boolean
+  selectedGroup?: string
+}
+
+// DEV-only: generate stable, plausible perf numbers seeded from the model name
+// so the perf badge renders locally where the DB has no real metrics. Never
+// runs in a production build (gated by import.meta.env.DEV at the call site).
+function mockPerf(modelName: string): ModelPerfBadgeData {
+  const rand = seededRandom(hashStringToSeed(modelName))
+  const successRate = randomInRange(rand, 98.5, 100)
+  return {
+    avg_ttft_ms: Math.round(randomInRange(rand, 300, 6000)),
+    avg_latency_ms: Math.round(randomInRange(rand, 2000, 18000)),
+    success_rate: parseFloat(successRate.toFixed(1)),
+    avg_tps: parseFloat(randomInRange(rand, 20, 180).toFixed(1)),
+  }
 }
 
 export function ModelCardGrid(props: ModelCardGridProps) {
@@ -64,6 +80,13 @@ export function ModelCardGrid(props: ModelCardGridProps) {
     return map
   }, [perfQuery.data])
 
+  const resolvePerf = (modelName: string): ModelPerfBadgeData | undefined => {
+    const real = perfMap.get(modelName)
+    if (real) return real
+    if (import.meta.env.DEV && modelName) return mockPerf(modelName)
+    return undefined
+  }
+
   if (props.models.length === 0) {
     return null
   }
@@ -79,7 +102,8 @@ export function ModelCardGrid(props: ModelCardGridProps) {
             priceRate={props.priceRate}
             usdExchangeRate={props.usdExchangeRate}
             showRechargePrice={props.showRechargePrice}
-            perf={perfMap.get(model.model_name || '')}
+            selectedGroup={props.selectedGroup}
+            perf={resolvePerf(model.model_name || '')}
             onClick={() => props.onModelClick(model.model_name || '')}
           />
         ))}
