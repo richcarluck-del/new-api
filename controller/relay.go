@@ -233,6 +233,9 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		if !shouldRetry(c, newAPIError, common.RetryTimes-retryParam.GetRetry()) {
 			break
 		}
+
+		// Clear channel affinity cache on failure to allow retry to select a different channel
+		service.ClearChannelAffinityOnFailure(c)
 	}
 
 	useChannel := c.GetStringSlice("use_channel")
@@ -561,6 +564,9 @@ func RelayTask(c *gin.Context) {
 		if !shouldRetryTaskRelay(c, channel.Id, taskErr, common.RetryTimes-retryParam.GetRetry()) {
 			break
 		}
+
+		// Clear channel affinity cache on failure to allow retry to select a different channel
+		service.ClearChannelAffinityOnFailure(c)
 	}
 
 	useChannel := c.GetStringSlice("use_channel")

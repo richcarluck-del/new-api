@@ -969,3 +969,24 @@ func channelAffinityUsageCacheStatsLock(key string) *sync.Mutex {
 	idx := h.Sum32() % uint32(len(channelAffinityUsageCacheStatsLocks))
 	return &channelAffinityUsageCacheStatsLocks[idx]
 }
+
+// ClearChannelAffinityOnFailure clears the channel affinity cache when a channel fails
+// and retry is allowed (SkipRetryOnFailure=false).
+// This allows the retry to select a different channel instead of being stuck on the failed one.
+func ClearChannelAffinityOnFailure(c *gin.Context) {
+	if c == nil {
+		return
+	}
+	// Only clear if skip retry is false (meaning retry is allowed)
+	if ShouldSkipRetryAfterChannelAffinityFailure(c) {
+		return
+	}
+	cacheKey, _, ok := getChannelAffinityContext(c)
+	if !ok {
+		return
+	}
+	cache := getChannelAffinityCache()
+	if _, err := cache.DeleteMany([]string{cacheKey}); err != nil {
+		common.SysError(fmt.Sprintf("channel affinity cache delete failed: key=%s, err=%v", cacheKey, err))
+	}
+}
