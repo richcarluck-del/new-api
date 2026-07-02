@@ -304,8 +304,12 @@ func fastTokenCountMetaForPricing(request dto.Request) *types.TokenCountMeta {
 }
 
 func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service.RetryParam) (*model.Channel, *types.NewAPIError) {
-	if info.ChannelMeta == nil {
-		logger.LogInfo(c, fmt.Sprintf("getChannel: ChannelMeta is nil, using fixed channel from context. Retry=%d", retryParam.GetRetry()))
+	// For retry (retry > 0), always re-select channel to enable failover
+	// 对于重试（retry > 0），总是重新选择渠道以启用故障转移
+	if retryParam.GetRetry() == 0 && info.ChannelMeta == nil {
+		// First attempt and ChannelMeta is nil: use fixed channel from distributor middleware
+		// 第一次尝试且 ChannelMeta 为 nil：使用 distributor middleware 选择的固定渠道
+		logger.LogInfo(c, fmt.Sprintf("getChannel: First attempt with fixed channel from context"))
 		autoBan := c.GetBool("auto_ban")
 		autoBanInt := 1
 		if !autoBan {
@@ -318,7 +322,10 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 			AutoBan: &autoBanInt,
 		}, nil
 	}
-	logger.LogInfo(c, fmt.Sprintf("getChannel: ChannelMeta exists, calling CacheGetRandomSatisfiedChannel. Retry=%d", retryParam.GetRetry()))
+
+	// For retry or when ChannelMeta exists: re-select channel with exclusion list
+	// 对于重试或 ChannelMeta 存在时：使用排除列表重新选择渠道
+	logger.LogInfo(c, fmt.Sprintf("getChannel: Re-selecting channel. Retry=%d, ExcludeChannelIDs=%v", retryParam.GetRetry(), retryParam.ExcludeChannelIDs))
 	channel, selectGroup, err := service.CacheGetRandomSatisfiedChannel(retryParam)
 
 	info.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, info)
