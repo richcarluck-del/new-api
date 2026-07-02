@@ -179,10 +179,11 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	}()
 
 	retryParam := &service.RetryParam{
-		Ctx:        c,
-		TokenGroup: relayInfo.TokenGroup,
-		ModelName:  relayInfo.OriginModelName,
-		Retry:      common.GetPointer(0),
+		Ctx:               c,
+		TokenGroup:        relayInfo.TokenGroup,
+		ModelName:         relayInfo.OriginModelName,
+		Retry:             common.GetPointer(0),
+		ExcludeChannelIDs: make([]int, 0),
 	}
 	relayInfo.RetryIndex = 0
 	relayInfo.LastError = nil
@@ -233,6 +234,9 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		if !shouldRetry(c, newAPIError, common.RetryTimes-retryParam.GetRetry()) {
 			break
 		}
+
+		// Add failed channel to exclusion list to prevent retry on same channel
+		retryParam.ExcludeChannelIDs = append(retryParam.ExcludeChannelIDs, channel.Id)
 
 		// Clear channel affinity cache on failure to allow retry to select a different channel
 		service.ClearChannelAffinityOnFailure(c)
@@ -510,10 +514,11 @@ func RelayTask(c *gin.Context) {
 	}()
 
 	retryParam := &service.RetryParam{
-		Ctx:        c,
-		TokenGroup: relayInfo.TokenGroup,
-		ModelName:  relayInfo.OriginModelName,
-		Retry:      common.GetPointer(0),
+		Ctx:               c,
+		TokenGroup:        relayInfo.TokenGroup,
+		ModelName:         relayInfo.OriginModelName,
+		Retry:             common.GetPointer(0),
+		ExcludeChannelIDs: make([]int, 0),
 	}
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
@@ -564,6 +569,9 @@ func RelayTask(c *gin.Context) {
 		if !shouldRetryTaskRelay(c, channel.Id, taskErr, common.RetryTimes-retryParam.GetRetry()) {
 			break
 		}
+
+		// Add failed channel to exclusion list to prevent retry on same channel
+		retryParam.ExcludeChannelIDs = append(retryParam.ExcludeChannelIDs, channel.Id)
 
 		// Clear channel affinity cache on failure to allow retry to select a different channel
 		service.ClearChannelAffinityOnFailure(c)
