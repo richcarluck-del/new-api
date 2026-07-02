@@ -119,6 +119,8 @@ func GetRandomSatisfiedChannelWithExclusions(group string, model string, retry i
 		return nil, nil
 	}
 
+	common.SysLog(fmt.Sprintf("GetRandomSatisfiedChannelWithExclusions: group=%s, model=%s, retry=%d, total_channels=%d, exclude=%v", group, model, retry, len(channels), excludeChannelIDs))
+
 	// Filter out excluded channels
 	if len(excludeChannelIDs) > 0 {
 		excludeMap := make(map[int]bool)
@@ -131,6 +133,7 @@ func GetRandomSatisfiedChannelWithExclusions(group string, model string, retry i
 				filteredChannels = append(filteredChannels, channelId)
 			}
 		}
+		common.SysLog(fmt.Sprintf("Filtered channels: before=%d, after=%d", len(channels), len(filteredChannels)))
 		channels = filteredChannels
 	}
 
@@ -206,6 +209,7 @@ func GetRandomSatisfiedChannelWithExclusions(group string, model string, retry i
 	for _, channel := range targetChannels {
 		randomWeight -= channel.GetWeight()*smoothingFactor + smoothingAdjustment
 		if randomWeight < 0 {
+			common.SysLog(fmt.Sprintf("Selected channel: ID=%d, Name=%s, Priority=%d", channel.Id, channel.Name, channel.GetPriority()))
 			return channel, nil
 		}
 	}

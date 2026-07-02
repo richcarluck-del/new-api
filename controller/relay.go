@@ -190,6 +190,12 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
 		relayInfo.RetryIndex = retryParam.GetRetry()
+
+		// Log retry attempt with exclusion list
+		if retryParam.GetRetry() > 0 {
+			logger.LogInfo(c, fmt.Sprintf("重试 #%d，已排除渠道: %v", retryParam.GetRetry(), retryParam.ExcludeChannelIDs))
+		}
+
 		channel, channelErr := getChannel(c, relayInfo, retryParam)
 		if channelErr != nil {
 			logger.LogError(c, channelErr.Error())
@@ -197,6 +203,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			break
 		}
 
+		logger.LogInfo(c, fmt.Sprintf("选择渠道: ID=%d, Name=%s, Retry=%d", channel.Id, channel.Name, retryParam.GetRetry()))
 		addUsedChannel(c, channel.Id)
 		bodyStorage, bodyErr := common.GetBodyStorage(c)
 		if bodyErr != nil {
@@ -298,6 +305,7 @@ func fastTokenCountMetaForPricing(request dto.Request) *types.TokenCountMeta {
 
 func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service.RetryParam) (*model.Channel, *types.NewAPIError) {
 	if info.ChannelMeta == nil {
+		logger.LogInfo(c, fmt.Sprintf("getChannel: ChannelMeta is nil, using fixed channel from context. Retry=%d", retryParam.GetRetry()))
 		autoBan := c.GetBool("auto_ban")
 		autoBanInt := 1
 		if !autoBan {
@@ -310,6 +318,7 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 			AutoBan: &autoBanInt,
 		}, nil
 	}
+	logger.LogInfo(c, fmt.Sprintf("getChannel: ChannelMeta exists, calling CacheGetRandomSatisfiedChannel. Retry=%d", retryParam.GetRetry()))
 	channel, selectGroup, err := service.CacheGetRandomSatisfiedChannel(retryParam)
 
 	info.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, info)
